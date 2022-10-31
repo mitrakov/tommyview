@@ -1,9 +1,10 @@
 // ignore_for_file: curly_braces_in_flow_control_structures
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as path;
+import 'package:file_picker/file_picker.dart';
+import 'package:window_size/window_size.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    setWindowTitle(path.basename(currentFile.path));
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
