@@ -19,10 +19,11 @@ class MyApp extends StatefulWidget {
   late final List<File> files;
 
   MyApp(this.startPath, {Key? key}) : super(key: key) {
+    final allowedExtensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".wbmp"};
     files = Directory(path.dirname(startPath))
-      .listSync()
-      .whereType<File>()                               // filter out directories
-      .where((f) => path.extension(f.path) == ".png")  // filter by extension
+      .listSync()                                                                      // get all folder children
+      .whereType<File>()                                                               // filter out directories
+      .where((f) => allowedExtensions.contains(path.extension(f.path).toLowerCase()))  // filter by extension
       .toList();
     files.sort((a, b) => a.path.compareTo(b.path));
   }
@@ -38,7 +39,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    currentFile = widget.files.where((f) => f.path == widget.startPath).first;
+    currentFile = widget.files.firstWhere((f) => f.path == widget.startPath, orElse: () => widget.files.first);
     index = widget.files.indexOf(currentFile);
   }
 
