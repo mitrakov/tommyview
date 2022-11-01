@@ -9,10 +9,11 @@ import 'package:window_size/window_size.dart';
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (args.isEmpty) {
+  if (args.isNotEmpty) runApp(MyApp(args.first));
+  else {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     runApp(MyApp(result?.files.first.path ?? ""));
-  } else runApp(MyApp(args.first));
+  }
 }
 
 class MyApp extends StatefulWidget {
