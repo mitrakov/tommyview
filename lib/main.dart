@@ -8,18 +8,21 @@ import 'package:window_size/window_size.dart' as window;
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  setWindowSize();
-
-  if (args.isNotEmpty) runApp(MyApp(args.first));
-  else {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    runApp(MyApp(result?.files.first.path ?? ""));
-  }
+  final startFile = await getStartFile(args);
+  runApp(MyApp(startFile));
 }
 
-Future<void> setWindowSize() async {
-  final screen = await window.getCurrentScreen();
-  window.setWindowFrame(screen?.frame ?? const Rect.fromLTWH(0, 0, 1024, 768));
+/// Returns a file that has been opened with our App (or "" if a user cancels OpenFileDialog)
+Future<String> getStartFile(List<String> args) async {
+  if (args.isNotEmpty) return args.first;
+  if (Platform.isMacOS) {
+    // in MacOS, we need to make a call to Swift native code to check if a file has been opened with our App
+    const hostApi = MethodChannel("mitrakov");
+    final String? currentFile = await hostApi.invokeMethod("getCurrentFile");
+    if (currentFile != null) return currentFile;
+  }
+  FilePickerResult? result = await FilePicker.platform.pickFiles();
+  return result?.files.first.path ?? "";
 }
 
 class MyApp extends StatefulWidget {
