@@ -4,16 +4,22 @@ import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:window_size/window_size.dart';
+import 'package:window_size/window_size.dart' as window;
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  setWindowSize();
 
   if (args.isNotEmpty) runApp(MyApp(args.first));
   else {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     runApp(MyApp(result?.files.first.path ?? ""));
   }
+}
+
+Future<void> setWindowSize() async {
+  final screen = await window.getCurrentScreen();
+  window.setWindowFrame(screen?.frame ?? const Rect.fromLTWH(0, 0, 1024, 768));
 }
 
 class MyApp extends StatefulWidget {
@@ -47,7 +53,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    setWindowTitle(path.basename(currentFile.path));
+    window.setWindowTitle(path.basename(currentFile.path));
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
