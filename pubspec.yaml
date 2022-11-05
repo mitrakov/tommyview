@@ -10,13 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.2
-  file_picker: ^4.6.1
-  window_size:
-    git:
-      url: https://github.com/google/flutter-desktop-embedding.git
-      path: plugins/window_size
-      ref: 17d4710c17f4913137e7ec931f6e71eaef443363
+  file_picker: ^4.6.1         # open-file dialog
+  window_manager: ^0.2.7      # set title to window
 
 dev_dependencies:
   flutter_test:

@@ -3,10 +3,11 @@ import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:window_size/window_size.dart' as window;
+import 'package:window_manager/window_manager.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  await windowManager.ensureInitialized();
   final startFile = await getStartFile(args);
   runApp(MyApp(startFile));
 }
@@ -76,7 +77,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    window.setWindowTitle(path.basename(currentFile.path));
+    windowManager.setTitle(path.basename(currentFile.path));
     return MaterialApp(
       title: 'Tommy Viewer',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
