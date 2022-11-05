@@ -1,4 +1,3 @@
-// ignore_for_file: curly_braces_in_flow_control_structures
 import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
@@ -30,7 +29,7 @@ class MyApp extends StatefulWidget {
   late final List<File> files;
 
   MyApp(this.startPath, {Key? key}) : super(key: key) {
-    final allowedExtensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".wbmp"};
+    final allowedExtensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".wbmp"}; // should match the ones in Info.plist!
     files = Directory(path.dirname(startPath))
       .listSync()                                                                      // get all folder children
       .whereType<File>()                                                               // filter out directories
@@ -54,11 +53,32 @@ class _MyAppState extends State<MyApp> {
     index = widget.files.indexOf(currentFile);
   }
 
+  // handler for ⬅️ and ➡️ buttons
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyUpEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+        if (index > 0) {
+          setState(() {
+            index--;
+            currentFile = widget.files[index];
+          });
+        }
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+        if (index < widget.files.length - 1) {
+          setState(() {
+            index++;
+            currentFile = widget.files[index];
+          });
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     window.setWindowTitle(path.basename(currentFile.path));
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Tommy Viewer',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
       home: Scaffold(
         body: KeyboardListener(
@@ -70,25 +90,7 @@ class _MyAppState extends State<MyApp> {
             height: double.infinity,
             alignment: Alignment.center,
           ),
-          onKeyEvent: (event) {
-            if (event is KeyUpEvent) {
-              if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                if (index > 0) {
-                  setState(() {
-                    index--;
-                    currentFile = widget.files[index];
-                  });
-                }
-              } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                if (index < widget.files.length - 1) {
-                  setState(() {
-                    index++;
-                    currentFile = widget.files[index];
-                  });
-                }
-              }
-            }
-          }
+          onKeyEvent: _handleKeyEvent
         )
       )
     );
