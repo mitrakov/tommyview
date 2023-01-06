@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -46,6 +47,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late File currentFile;
   late int index;
+  double rotateAngleRad = 0;
 
   @override
   void initState() {
@@ -62,6 +64,7 @@ class _MyAppState extends State<MyApp> {
           setState(() {
             index--;
             currentFile = widget.files[index];
+            rotateAngleRad = 0;
           });
         }
       } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
@@ -69,31 +72,51 @@ class _MyAppState extends State<MyApp> {
           setState(() {
             index++;
             currentFile = widget.files[index];
+            rotateAngleRad = 0;
           });
         }
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        setState(() {
+          rotateAngleRad += pi/2;
+        });
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+        setState(() {
+          rotateAngleRad -= pi/2;
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    windowManager.setTitle(path.basename(currentFile.path));
+    windowManager.setTitle(path.basename(currentFile.path) + (_isUpright(rotateAngleRad) ? "" : "*"));
     return MaterialApp(
       title: 'Tommy Viewer',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
       home: Scaffold(
         body: KeyboardListener(
           focusNode: FocusNode(),
-          child: Image.file(
-            currentFile,
-            fit: BoxFit.scaleDown,
-            width: double.infinity,
-            height: double.infinity,
-            alignment: Alignment.center,
+          child: Transform.rotate(
+            angle: rotateAngleRad,
+            child: Image.file(
+              currentFile,
+              fit: BoxFit.scaleDown,
+              width: double.infinity,
+              height: double.infinity,
+              alignment: Alignment.center,
+            )
           ),
           onKeyEvent: _handleKeyEvent
         )
       )
     );
+  }
+
+  static const double EPS = 1e-12;
+  static const double TWO_PI = 2*pi;
+  /// Returns `true` for 2pi, 4pi, 6pi, etc.
+  bool _isUpright(double angle) {
+    final d = angle / (TWO_PI);
+    return (d - d.round()).abs() < EPS;
   }
 }
