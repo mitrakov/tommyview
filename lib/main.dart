@@ -56,37 +56,6 @@ class _MyAppState extends State<MyApp> {
     index = widget.files.indexOf(currentFile);
   }
 
-  // handler for ⬅️ and ➡️ buttons
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is KeyUpEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-        if (index > 0) {
-          setState(() {
-            index--;
-            currentFile = widget.files[index];
-            rotateAngleRad = 0;
-          });
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-        if (index < widget.files.length - 1) {
-          setState(() {
-            index++;
-            currentFile = widget.files[index];
-            rotateAngleRad = 0;
-          });
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-        setState(() {
-          rotateAngleRad += pi/2;
-        });
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        setState(() {
-          rotateAngleRad -= pi/2;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     windowManager.setTitle(path.basename(currentFile.path) + (_isUpright(rotateAngleRad) ? "" : "*"));
@@ -94,19 +63,68 @@ class _MyAppState extends State<MyApp> {
       title: 'Tommy Viewer',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
       home: Scaffold(
-        body: KeyboardListener(
-          focusNode: FocusNode(),
-          child: Transform.rotate(
-            angle: rotateAngleRad,
-            child: Image.file(
-              currentFile,
-              fit: BoxFit.scaleDown,
-              width: double.infinity,
-              height: double.infinity,
-              alignment: Alignment.center,
-            )
+        body: Shortcuts(
+          shortcuts: {
+            const SingleActivator(LogicalKeyboardKey.arrowRight): NextImageIntent(),
+            const SingleActivator(LogicalKeyboardKey.arrowLeft): PreviousImageIntent(),
+            const SingleActivator(LogicalKeyboardKey.arrowUp): RotateClockwiseIntent(),
+            const SingleActivator(LogicalKeyboardKey.arrowDown): RotateCounterclockwiseIntent(),
+            SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent()
+          },
+          child: Actions(
+            actions: {
+              NextImageIntent: CallbackAction(onInvoke: (i) {
+                if (index < widget.files.length - 1) {
+                  setState(() {
+                    index++;
+                    currentFile = widget.files[index];
+                    rotateAngleRad = 0;
+                  });
+                }
+                return null;
+              }),
+              PreviousImageIntent: CallbackAction(onInvoke: (i) {
+                if (index > 0) {
+                  setState(() {
+                    index--;
+                    currentFile = widget.files[index];
+                    rotateAngleRad = 0;
+                  });
+                }
+                return null;
+              }),
+              RotateClockwiseIntent: CallbackAction(onInvoke: (i) {
+                setState(() {
+                  rotateAngleRad += pi/2;
+                });
+                return null;
+              }),
+              RotateCounterclockwiseIntent: CallbackAction(onInvoke: (i) {
+                setState(() {
+                  rotateAngleRad -= pi/2;
+                });
+                return null;
+              }),
+              SaveFileIntent: CallbackAction(onInvoke: (i) {
+                if (!_isUpright(rotateAngleRad))
+                  print("Saving file...");
+                return null;
+              }),
+            },
+            child: Focus(
+              autofocus: true,
+              child: Transform.rotate(
+                angle: rotateAngleRad,
+                child: Image.file(
+                  currentFile,
+                  fit: BoxFit.scaleDown,
+                  width: double.infinity,
+                  height: double.infinity,
+                  alignment: Alignment.center,
+                )
+              ),
+            ),
           ),
-          onKeyEvent: _handleKeyEvent
         )
       )
     );
@@ -120,3 +138,10 @@ class _MyAppState extends State<MyApp> {
     return (d - d.round()).abs() < EPS;
   }
 }
+
+// Shortcut intents
+class NextImageIntent extends Intent {}
+class PreviousImageIntent extends Intent {}
+class RotateClockwiseIntent extends Intent {}
+class RotateCounterclockwiseIntent extends Intent {}
+class SaveFileIntent extends Intent {}
