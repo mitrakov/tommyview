@@ -50,6 +50,7 @@ class _MyAppState extends State<MyApp> {
   late File currentFile;
   late int index;
   int rotateAngleDegrees = 0;
+  bool loadFromCache = true;
 
   @override
   void initState() {
@@ -61,6 +62,10 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     windowManager.setTitle(path.basename(currentFile.path) + (rotateAngleDegrees % 360 == 0 ? "" : "*"));
+    final image = loadFromCache
+        ? Image.file  (currentFile,                   fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
+        : Image.memory(currentFile.readAsBytesSync(), fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center);
+    loadFromCache = true;
     return MaterialApp(
       title: 'Tommy Viewer',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
@@ -110,11 +115,13 @@ class _MyAppState extends State<MyApp> {
               SaveFileIntent: CallbackAction(onInvoke: (i) {
                 if (rotateAngleDegrees % 360 != 0) {
                   print("Saving file: '${currentFile.path}'");
-                  final image = img.decodeImage(currentFile.readAsBytesSync())!;
-                  final newImage = img.copyRotate(image, rotateAngleDegrees);
+                  image.image.evict(); // remove old image
+                  final oldImage = img.decodeImage(currentFile.readAsBytesSync())!;
+                  final newImage = img.copyRotate(oldImage, rotateAngleDegrees);
                   final bytes = img.encodeNamedImage(newImage, currentFile.path)!;
                   currentFile.writeAsBytesSync(bytes, flush: true);
                   setState(() {
+                    loadFromCache = false;
                     rotateAngleDegrees = 0;
                   });
                 }
@@ -123,16 +130,7 @@ class _MyAppState extends State<MyApp> {
             },
             child: Focus(
               autofocus: true,
-              child: Transform.rotate(
-                angle: rotateAngleDegrees * pi / 180,
-                child: Image.file(
-                  currentFile,
-                  fit: BoxFit.scaleDown,
-                  width: double.infinity,
-                  height: double.infinity,
-                  alignment: Alignment.center
-                )
-              )
+              child: Transform.rotate(angle: rotateAngleDegrees * pi / 180, child: image)
             )
           )
         )
