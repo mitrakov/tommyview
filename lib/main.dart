@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
 import 'package:file_picker/file_picker.dart';
+import 'package:prompt_dialog/prompt_dialog.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_platform_alert/flutter_platform_alert.dart';
 
@@ -13,7 +14,7 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
   final startFile = await getStartFile(args);
-  runApp(MyApp(startFile));
+  runApp(MaterialApp(home: Scaffold(body: MyApp(startFile))));
 }
 
 /// Returns a file that has been opened with our App (or "" if a user cancels OpenFileDialog)
@@ -64,71 +65,59 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     windowManager.setTitle(path.basename(currentFile.path) + (rotateAngleDegrees % 360 == 0 ? "" : "*"));
-    final app = MaterialApp(
-      title: 'Tommy Viewer',
-      theme: ThemeData(primarySwatch: Colors.blueGrey),
-      home: Scaffold(
-        body: Shortcuts(
-          shortcuts: {
-            SingleActivator(LogicalKeyboardKey.arrowRight): NextImageIntent(),
-            SingleActivator(LogicalKeyboardKey.arrowLeft): PreviousImageIntent(),
-            SingleActivator(LogicalKeyboardKey.arrowUp): RotateClockwiseIntent(),
-            SingleActivator(LogicalKeyboardKey.arrowDown): RotateCounterclockwiseIntent(),
-            SingleActivator(LogicalKeyboardKey.delete): DeleteFileIntent(),
-            SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
-            SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent()
-          },
-          child: Actions(
-            actions: {
-              NextImageIntent: CallbackAction(onInvoke: (i) {
-                if (index < widget.files.length - 1) {
-                  setState(() {
-                    index++;
-                    currentFile = widget.files[index];
-                    rotateAngleDegrees = 0;
-                  });
-                }
-                return null;
-              }),
-              PreviousImageIntent: CallbackAction(onInvoke: (i) {
-                if (index > 0) {
-                  setState(() {
-                    index--;
-                    currentFile = widget.files[index];
-                    rotateAngleDegrees = 0;
-                  });
-                }
-                return null;
-              }),
-              RotateClockwiseIntent: CallbackAction(onInvoke: (i) {
-                setState(() {
-                  rotateAngleDegrees += 90;
-                });
-                return null;
-              }),
-              RotateCounterclockwiseIntent: CallbackAction(onInvoke: (i) {
-                setState(() {
-                  rotateAngleDegrees -= 90;
-                });
-                return null;
-              }),
-              DeleteFileIntent: CallbackAction(onInvoke: (i) => _deleteFile()),
-              SaveFileIntent: CallbackAction(onInvoke: (i) => _saveFile()),
-              RenameFileIntent: CallbackAction(onInvoke: (i) => _renameFile())
-            },
-            child: Focus(
-              autofocus: true,
-              child: Transform.rotate(angle: rotateAngleDegrees * pi / 180, child: forceLoad
-                ? Image.memory(currentFile.readAsBytesSync(), key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
-                : Image.file  (currentFile,                   key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
-              )
-            )
+    final app = Shortcuts(
+      shortcuts: {
+        SingleActivator(LogicalKeyboardKey.arrowRight): NextImageIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowLeft): PreviousImageIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowUp): RotateClockwiseIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowDown): RotateCounterclockwiseIntent(),
+        SingleActivator(LogicalKeyboardKey.delete): DeleteFileIntent(),
+        SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
+        SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent()
+      },
+      child: Actions(
+        actions: {
+          NextImageIntent:              CallbackAction(onInvoke: (_) => _nextImage()),
+          PreviousImageIntent:          CallbackAction(onInvoke: (_) => _previousImage()),
+          RotateClockwiseIntent:        CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees += 90;})),
+          RotateCounterclockwiseIntent: CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees -= 90;})),
+          DeleteFileIntent:             CallbackAction(onInvoke: (_) => _deleteFile()),
+          SaveFileIntent:               CallbackAction(onInvoke: (_) => _saveFile()),
+          RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context))
+        },
+        child: Focus(              // needed for Shortcuts
+          autofocus: true,         // focused by default
+          child: Transform.rotate(
+            angle: rotateAngleDegrees * pi / 180,
+            child: forceLoad
+              ? Image.memory(currentFile.readAsBytesSync(), key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
+              : Image.file  (currentFile,                   key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
           )
         )
       )
     );
     forceLoad = false;
     return app;
+  }
+
+  void _nextImage() {
+    if (index < widget.files.length - 1) {
+      setState(() {
+        index++;
+        currentFile = widget.files[index];
+        rotateAngleDegrees = 0;
+      });
+    }
+  }
+
+  void _previousImage() {
+    if (index > 0) {
+      setState(() {
+        index--;
+        currentFile = widget.files[index];
+        rotateAngleDegrees = 0;
+      });
+    }
   }
 
   void _deleteFile() async {
@@ -164,8 +153,15 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  void _renameFile() {
-    print('Renaming file: "${currentFile.path}"');
+  void _renameFile(BuildContext context) async {
+    // comment 1
+    final currentName = path.basename(currentFile.path);
+    final newName = await prompt(context, title: Text('Rename file "$currentName"?'), initialValue: currentName, barrierDismissible: true); // barrierDismissible=true to allow ESC button
+    if (newName != null && newName.isNotEmpty && newName != currentName) {
+      final newPath = path.join(path.dirname(currentFile.path), newName); // comment 2
+      print('Renaming file: "${currentFile.path}" to "$newPath"');
+      currentFile.renameSync(newPath);
+    }
   }
 }
 
