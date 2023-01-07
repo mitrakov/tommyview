@@ -1,3 +1,4 @@
+// ignore_for_file: constant_identifier_names
 import 'dart:io';
 import 'dart:math';
 import 'package:path/path.dart' as path;
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:image/image.dart' as img;
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +49,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late File currentFile;
   late int index;
-  double rotateAngleRad = 0;
+  int rotateAngleDegrees = 0;
 
   @override
   void initState() {
@@ -58,7 +60,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    windowManager.setTitle(path.basename(currentFile.path) + (_isUpright(rotateAngleRad) ? "" : "*"));
+    windowManager.setTitle(path.basename(currentFile.path) + (rotateAngleDegrees % 360 == 0 ? "" : "*"));
     return MaterialApp(
       title: 'Tommy Viewer',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
@@ -78,7 +80,7 @@ class _MyAppState extends State<MyApp> {
                   setState(() {
                     index++;
                     currentFile = widget.files[index];
-                    rotateAngleRad = 0;
+                    rotateAngleDegrees = 0;
                   });
                 }
                 return null;
@@ -88,58 +90,58 @@ class _MyAppState extends State<MyApp> {
                   setState(() {
                     index--;
                     currentFile = widget.files[index];
-                    rotateAngleRad = 0;
+                    rotateAngleDegrees = 0;
                   });
                 }
                 return null;
               }),
               RotateClockwiseIntent: CallbackAction(onInvoke: (i) {
                 setState(() {
-                  rotateAngleRad += pi/2;
+                  rotateAngleDegrees += 90;
                 });
                 return null;
               }),
               RotateCounterclockwiseIntent: CallbackAction(onInvoke: (i) {
                 setState(() {
-                  rotateAngleRad -= pi/2;
+                  rotateAngleDegrees -= 90;
                 });
                 return null;
               }),
               SaveFileIntent: CallbackAction(onInvoke: (i) {
-                if (!_isUpright(rotateAngleRad))
-                  print("Saving file...");
+                if (rotateAngleDegrees % 360 != 0) {
+                  print("Saving file: '${currentFile.path}'");
+                  final image = img.decodeImage(currentFile.readAsBytesSync())!;
+                  final newImage = img.copyRotate(image, rotateAngleDegrees);
+                  final bytes = img.encodeNamedImage(newImage, currentFile.path)!;
+                  currentFile.writeAsBytesSync(bytes, flush: true);
+                  setState(() {
+                    rotateAngleDegrees = 0;
+                  });
+                }
                 return null;
               }),
             },
             child: Focus(
               autofocus: true,
               child: Transform.rotate(
-                angle: rotateAngleRad,
+                angle: rotateAngleDegrees * pi / 180,
                 child: Image.file(
                   currentFile,
                   fit: BoxFit.scaleDown,
                   width: double.infinity,
                   height: double.infinity,
-                  alignment: Alignment.center,
+                  alignment: Alignment.center
                 )
-              ),
-            ),
-          ),
+              )
+            )
+          )
         )
       )
     );
   }
-
-  static const double EPS = 1e-12;
-  static const double TWO_PI = 2*pi;
-  /// Returns `true` for 2pi, 4pi, 6pi, etc.
-  bool _isUpright(double angle) {
-    final d = angle / (TWO_PI);
-    return (d - d.round()).abs() < EPS;
-  }
 }
 
-// Shortcut intents
+// Hotkey intents
 class NextImageIntent extends Intent {}
 class PreviousImageIntent extends Intent {}
 class RotateClockwiseIntent extends Intent {}
