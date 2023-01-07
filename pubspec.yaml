@@ -2,7 +2,7 @@
 name: tommyview
 description: A new Flutter project.
 
-version: 1.0.1+2
+version: 23.1.7+2
 
 environment:
   sdk: ">=2.16.2 <3.0.0"
