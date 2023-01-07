@@ -47,10 +47,11 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final imageKey = GlobalKey();
   late File currentFile;
   late int index;
   int rotateAngleDegrees = 0;
-  bool loadFromCache = true;
+  bool forceLoad = false;
 
   @override
   void initState() {
@@ -62,11 +63,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     windowManager.setTitle(path.basename(currentFile.path) + (rotateAngleDegrees % 360 == 0 ? "" : "*"));
-    final image = loadFromCache
-        ? Image.file  (currentFile,                   fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
-        : Image.memory(currentFile.readAsBytesSync(), fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center);
-    loadFromCache = true;
-    return MaterialApp(
+    final app = MaterialApp(
       title: 'Tommy Viewer',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
       home: Scaffold(
@@ -115,13 +112,13 @@ class _MyAppState extends State<MyApp> {
               SaveFileIntent: CallbackAction(onInvoke: (i) {
                 if (rotateAngleDegrees % 360 != 0) {
                   print("Saving file: '${currentFile.path}'");
-                  image.image.evict(); // remove old image
+                  (imageKey.currentWidget as Image).image.evict();    // reset cache for current image
                   final oldImage = img.decodeImage(currentFile.readAsBytesSync())!;
                   final newImage = img.copyRotate(oldImage, rotateAngleDegrees);
                   final bytes = img.encodeNamedImage(newImage, currentFile.path)!;
                   currentFile.writeAsBytesSync(bytes, flush: true);
                   setState(() {
-                    loadFromCache = false;
+                    forceLoad = true;                                 // force reload current image from disk
                     rotateAngleDegrees = 0;
                   });
                 }
@@ -130,12 +127,17 @@ class _MyAppState extends State<MyApp> {
             },
             child: Focus(
               autofocus: true,
-              child: Transform.rotate(angle: rotateAngleDegrees * pi / 180, child: image)
+              child: Transform.rotate(angle: rotateAngleDegrees * pi / 180, child: forceLoad
+                ? Image.memory(currentFile.readAsBytesSync(), key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
+                : Image.file  (currentFile,                   key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
+              )
             )
           )
         )
       )
     );
+    forceLoad = false;
+    return app;
   }
 }
 
