@@ -1,12 +1,13 @@
-// ignore_for_file: constant_identifier_names
+// ignore_for_file: constant_identifier_names, prefer_const_constructors, curly_braces_in_flow_control_structures
 import 'dart:io';
 import 'dart:math';
-import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as path;
+import 'package:image/image.dart' as img;
 import 'package:file_picker/file_picker.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:image/image.dart' as img;
+import 'package:flutter_platform_alert/flutter_platform_alert.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,11 +70,13 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         body: Shortcuts(
           shortcuts: {
-            const SingleActivator(LogicalKeyboardKey.arrowRight): NextImageIntent(),
-            const SingleActivator(LogicalKeyboardKey.arrowLeft): PreviousImageIntent(),
-            const SingleActivator(LogicalKeyboardKey.arrowUp): RotateClockwiseIntent(),
-            const SingleActivator(LogicalKeyboardKey.arrowDown): RotateCounterclockwiseIntent(),
-            SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent()
+            SingleActivator(LogicalKeyboardKey.arrowRight): NextImageIntent(),
+            SingleActivator(LogicalKeyboardKey.arrowLeft): PreviousImageIntent(),
+            SingleActivator(LogicalKeyboardKey.arrowUp): RotateClockwiseIntent(),
+            SingleActivator(LogicalKeyboardKey.arrowDown): RotateCounterclockwiseIntent(),
+            SingleActivator(LogicalKeyboardKey.delete): DeleteFileIntent(),
+            SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
+            SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent()
           },
           child: Actions(
             actions: {
@@ -109,21 +112,9 @@ class _MyAppState extends State<MyApp> {
                 });
                 return null;
               }),
-              SaveFileIntent: CallbackAction(onInvoke: (i) {
-                if (rotateAngleDegrees % 360 != 0) {
-                  print("Saving file: '${currentFile.path}'");
-                  (imageKey.currentWidget as Image).image.evict();    // reset cache for current image
-                  final oldImage = img.decodeImage(currentFile.readAsBytesSync())!;
-                  final newImage = img.copyRotate(oldImage, rotateAngleDegrees);
-                  final bytes = img.encodeNamedImage(newImage, currentFile.path)!;
-                  currentFile.writeAsBytesSync(bytes, flush: true);
-                  setState(() {
-                    forceLoad = true;                                 // force reload current image from disk
-                    rotateAngleDegrees = 0;
-                  });
-                }
-                return null;
-              }),
+              DeleteFileIntent: CallbackAction(onInvoke: (i) => _deleteFile()),
+              SaveFileIntent: CallbackAction(onInvoke: (i) => _saveFile()),
+              RenameFileIntent: CallbackAction(onInvoke: (i) => _renameFile())
             },
             child: Focus(
               autofocus: true,
@@ -139,6 +130,43 @@ class _MyAppState extends State<MyApp> {
     forceLoad = false;
     return app;
   }
+
+  void _deleteFile() async {
+    const title = "Delete file?";
+    final text = 'Remove file "${path.basename(currentFile.path)}"?';
+    if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
+      print('Deleting file: "${currentFile.path}"');
+      currentFile.deleteSync();
+      widget.files.removeAt(index);
+      if (widget.files.isEmpty) {
+        print("Current directory is empty. Exit app...");
+        exit(0);
+      } else setState(() {
+        if (index >= widget.files.length) index--; // if we deleted last file => switch pointer to previous
+        currentFile = widget.files[index];
+        rotateAngleDegrees = 0;
+      });
+    }
+  }
+
+  void _saveFile() {
+    if (rotateAngleDegrees % 360 != 0) {
+      print('Saving file: "${currentFile.path}"');
+      (imageKey.currentWidget as Image).image.evict();    // reset cache for current image
+      final oldImage = img.decodeImage(currentFile.readAsBytesSync())!;
+      final newImage = img.copyRotate(oldImage, rotateAngleDegrees);
+      final bytes = img.encodeNamedImage(newImage, currentFile.path)!;
+      currentFile.writeAsBytesSync(bytes, flush: true);
+      setState(() {
+        forceLoad = true;                                 // force reload current image from disk
+        rotateAngleDegrees = 0;
+      });
+    }
+  }
+
+  void _renameFile() {
+    print('Renaming file: "${currentFile.path}"');
+  }
 }
 
 // Hotkey intents
@@ -147,3 +175,5 @@ class PreviousImageIntent extends Intent {}
 class RotateClockwiseIntent extends Intent {}
 class RotateCounterclockwiseIntent extends Intent {}
 class SaveFileIntent extends Intent {}
+class RenameFileIntent extends Intent {}
+class DeleteFileIntent extends Intent {}
