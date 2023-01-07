@@ -10,9 +10,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  file_picker: ^4.6.1         # open-file dialog
-  window_manager: ^0.2.7      # set title to window
-  image: ^3.1.3               # image manipulation library
+  file_picker: ^4.6.1             # open-file dialog
+  window_manager: ^0.2.7          # set title to window
+  image: ^3.1.3                   # image manipulation library
+  flutter_platform_alert: ^0.3.0  # platform dialogs
 
 dev_dependencies:
   flutter_test:
