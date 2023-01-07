@@ -160,7 +160,12 @@ class _MyAppState extends State<MyApp> {
     if (newName != null && newName.isNotEmpty && newName != currentName) {
       final newPath = path.join(path.dirname(currentFile.path), newName); // comment 2
       print('Renaming file: "${currentFile.path}" to "$newPath"');
-      currentFile.renameSync(newPath);
+      final newFile = currentFile.renameSync(newPath);
+      widget.files.removeAt(index);
+      widget.files.insert(index, newFile);
+      setState(() {
+        currentFile = widget.files[index];
+      });
     }
   }
 }
