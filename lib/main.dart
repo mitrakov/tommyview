@@ -174,7 +174,7 @@ class _MyAppState extends State<MyApp> {
   String? _validateFilename(String? s) {
     if (s == null || s.isEmpty) return "Filename cannot be empty";
     if (s.contains(Platform.pathSeparator)) return 'Filename cannot contain "${Platform.pathSeparator}"';
-    if (s.contains(RegExp(r'[^\x00-\x7F]'))) return 'Filename cannot contain non-printable characters';
+    if (s.contains(RegExp(r'[\x00-\x1F]'))) return 'Filename cannot contain non-printable characters';
     if (Platform.isWindows) {
       if (s.contains(RegExp(r'[<>:"/\\|?*]'))) return 'Filename cannot contain the following characters: <>:"/\\|?*';
       if (s.endsWith(" ")) return 'Filename cannot end with space (" ")';
