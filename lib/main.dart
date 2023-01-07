@@ -73,7 +73,8 @@ class _MyAppState extends State<MyApp> {
         SingleActivator(LogicalKeyboardKey.arrowDown): RotateCounterclockwiseIntent(),
         SingleActivator(LogicalKeyboardKey.delete): DeleteFileIntent(),
         SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
-        SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent()
+        SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
+        SingleActivator(LogicalKeyboardKey.f6, shift: true): RenameFileIntent()
       },
       child: Actions(
         actions: {
@@ -171,13 +172,15 @@ class _MyAppState extends State<MyApp> {
 
   String? _validateFilename(String? s) {
     if (s == null || s.isEmpty) return "Filename cannot be empty";
-    else if (Platform.isWindows) {
-      if (s.contains(RegExp(r'<>:"/\\\|\?\*'))) return 'Filename cannot contain the following characters: <>:"/\\|?*';
+    if (s.contains(Platform.pathSeparator)) return 'Filename cannot contain "${Platform.pathSeparator}"';
+    if (s.contains(RegExp(r'[^\x00-\x7F]'))) return 'Filename cannot contain non-printable characters';
+    if (Platform.isWindows) {
+      if (s.contains(RegExp(r'[<>:"/\\|?*]'))) return 'Filename cannot contain the following characters: <>:"/\\|?*';
+      if (s.endsWith(" ")) return 'Filename cannot end with space (" ")';
+      if (s.endsWith(".")) return 'Filename cannot end with dot (".")';
       if ({"CON", "PRN", "AUX", "NUL",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}.contains(s)) return 'Filename cannot be a reserved Windows word';
-    } else { // Linux, MacOS
-      if (s.contains("/")) return 'Filename cannot contain "/"';
     }
     return null;
   }
