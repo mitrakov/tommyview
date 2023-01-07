@@ -72,6 +72,7 @@ class _MyAppState extends State<MyApp> {
         SingleActivator(LogicalKeyboardKey.arrowUp): RotateClockwiseIntent(),
         SingleActivator(LogicalKeyboardKey.arrowDown): RotateCounterclockwiseIntent(),
         SingleActivator(LogicalKeyboardKey.delete): DeleteFileIntent(),
+        SingleActivator(LogicalKeyboardKey.backspace): DeleteFileIntent(),
         SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
         SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
         SingleActivator(LogicalKeyboardKey.f6, shift: true): RenameFileIntent()
