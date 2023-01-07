@@ -156,10 +156,10 @@ class _MyAppState extends State<MyApp> {
   void _renameFile(BuildContext context) async {
     // comment 1
     final currentName = path.basename(currentFile.path);
-    final newName = await prompt(context, title: Text('Rename file "$currentName"?'), initialValue: currentName, barrierDismissible: true); // barrierDismissible=true to allow ESC button
+    final newName = await prompt(context, title: Text('Rename file "$currentName"?'), initialValue: currentName, barrierDismissible: true, validator: _validateFilename ); // barrierDismissible=true to allow ESC button
     if (newName != null && newName.isNotEmpty && newName != currentName) {
       final newPath = path.join(path.dirname(currentFile.path), newName); // comment 2
-      print('Renaming file: "${currentFile.path}" to "$newPath"');
+      print('Renaming file: "${currentFile.path}" to "$newName"');
       final newFile = currentFile.renameSync(newPath);
       widget.files.removeAt(index);
       widget.files.insert(index, newFile);
@@ -167,6 +167,19 @@ class _MyAppState extends State<MyApp> {
         currentFile = widget.files[index];
       });
     }
+  }
+
+  String? _validateFilename(String? s) {
+    if (s == null || s.isEmpty) return "Filename cannot be empty";
+    else if (Platform.isWindows) {
+      if (s.contains(RegExp(r'<>:"/\\\|\?\*'))) return 'Filename cannot contain the following characters: <>:"/\\|?*';
+      if ({"CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}.contains(s)) return 'Filename cannot be a reserved Windows word';
+    } else { // Linux, MacOS
+      if (s.contains("/")) return 'Filename cannot contain "/"';
+    }
+    return null;
   }
 }
 
