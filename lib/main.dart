@@ -1,4 +1,4 @@
-// ignore_for_file: constant_identifier_names, prefer_const_constructors, curly_braces_in_flow_control_structures
+// ignore_for_file: prefer_const_constructors, curly_braces_in_flow_control_structures
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
