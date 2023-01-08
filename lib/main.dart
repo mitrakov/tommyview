@@ -177,6 +177,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   String? _validateFilename(String? s) {
+    // https://stackoverflow.com/a/31976060/2212849
     if (s == null || s.isEmpty) return "Filename cannot be empty";
     if (s.contains(Platform.pathSeparator)) return 'Filename cannot contain "${Platform.pathSeparator}"';
     if (s.contains(RegExp(r'[\x00-\x1F]'))) return 'Filename cannot contain non-printable characters';
