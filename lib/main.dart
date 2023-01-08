@@ -156,11 +156,16 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _renameFile(BuildContext context) async {
-    // comment 1
+    // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
+    // also, set "barrierDismissible" to 'true' to allow ESC button
     final currentName = path.basename(currentFile.path);
-    final newName = await prompt(context, title: Text('Rename file "$currentName"?'), initialValue: currentName, barrierDismissible: true, validator: _validateFilename ); // barrierDismissible=true to allow ESC button
+    final newName = await prompt(context, title: Text('Rename file "$currentName"?'), initialValue: currentName, barrierDismissible: true, validator: _validateFilename );
     if (newName != null && newName.isNotEmpty && newName != currentName) {
-      final newPath = path.join(path.dirname(currentFile.path), newName); // comment 2
+      // Note: pass "/the/full/path.jpg" to "renameSync()" (not "newName.jpg").
+      // Although "newName" is also supported by Dart (just renaming a file), it will work out only if
+      // the working directory is the same as the file location, which is not always the case.
+      // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
+      final newPath = path.join(path.dirname(currentFile.path), newName);
       print('Renaming file: "${currentFile.path}" to "$newName"');
       final newFile = currentFile.renameSync(newPath);
       widget.files.removeAt(index);
