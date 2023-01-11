@@ -67,15 +67,17 @@ class _MyAppState extends State<MyApp> {
     windowManager.setTitle(path.basename(currentFile.path) + (rotateAngleDegrees % 360 == 0 ? "" : "*"));
     final app = Shortcuts(
       shortcuts: {
-        SingleActivator(LogicalKeyboardKey.arrowRight): NextImageIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowLeft): PreviousImageIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowUp): RotateClockwiseIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowDown): RotateCounterclockwiseIntent(),
-        SingleActivator(LogicalKeyboardKey.delete): DeleteFileIntent(),
-        SingleActivator(LogicalKeyboardKey.backspace): DeleteFileIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowUp):                                                  RotateClockwiseIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowDown):                                                RotateCounterclockwiseIntent(),
+        SingleActivator(LogicalKeyboardKey.delete):                                                   DeleteFileIntent(),
+        SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
         SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
+        SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
         SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
-        SingleActivator(LogicalKeyboardKey.f6, shift: true): RenameFileIntent()
+        SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
+        SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
       },
       child: Actions(
         actions: {
@@ -85,7 +87,8 @@ class _MyAppState extends State<MyApp> {
           RotateCounterclockwiseIntent: CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees -= 90;})),
           DeleteFileIntent:             CallbackAction(onInvoke: (_) => _deleteFile()),
           SaveFileIntent:               CallbackAction(onInvoke: (_) => _saveFile()),
-          RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context))
+          RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context)),
+          CloseWindowIntent:            CallbackAction(onInvoke: (_) => exit(0)),
         },
         child: Focus(              // needed for Shortcuts
           autofocus: true,         // focused by default
@@ -126,13 +129,10 @@ class _MyAppState extends State<MyApp> {
     const title = "Delete file?";
     final text = 'Remove file "${path.basename(currentFile.path)}"?';
     if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
-      print('Deleting file: "${currentFile.path}"');
       currentFile.deleteSync();
       widget.files.removeAt(index);
-      if (widget.files.isEmpty) {
-        print("Current directory is empty. Exit app...");
-        exit(0);
-      } else setState(() {
+      if (widget.files.isEmpty) exit(0);
+      else setState(() {
         if (index >= widget.files.length) index--; // if we deleted last file => switch pointer to previous
         currentFile = widget.files[index];
         rotateAngleDegrees = 0;
@@ -142,7 +142,6 @@ class _MyAppState extends State<MyApp> {
 
   void _saveFile() {
     if (rotateAngleDegrees % 360 != 0) {
-      print('Saving file: "${currentFile.path}"');
       (imageKey.currentWidget as Image).image.evict();    // reset cache for current image
       final oldImage = img.decodeImage(currentFile.readAsBytesSync())!;
       final newImage = img.copyRotate(oldImage, rotateAngleDegrees);
@@ -158,15 +157,15 @@ class _MyAppState extends State<MyApp> {
   void _renameFile(BuildContext context) async {
     // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
     // also, set "barrierDismissible" to 'true' to allow ESC button
-    final currentName = path.basename(currentFile.path);
-    final newName = await prompt(context, title: Text('Rename file "$currentName"?'), initialValue: currentName, barrierDismissible: true, validator: _validateFilename );
+    final currentName = path.basenameWithoutExtension(currentFile.path);
+    final extension = path.extension(currentFile.path);
+    final newName = await prompt(context, title: Text('Rename file "$currentName" ($extension)?'), initialValue: currentName, barrierDismissible: true, validator: _validateFilename );
     if (newName != null && newName.isNotEmpty && newName != currentName) {
       // Note: pass "/the/full/path.jpg" to "renameSync()" (not "newName.jpg").
       // Although "newName" is also supported by Dart (just renaming a file), it will work out only if
       // the working directory is the same as the file location, which is not always the case.
       // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
-      final newPath = path.join(path.dirname(currentFile.path), newName);
-      print('Renaming file: "${currentFile.path}" to "$newName"');
+      final newPath = path.join(path.dirname(currentFile.path), "$newName$extension");
       final newFile = currentFile.renameSync(newPath);
       widget.files.removeAt(index);
       widget.files.insert(index, newFile);
@@ -201,3 +200,4 @@ class RotateCounterclockwiseIntent extends Intent {}
 class SaveFileIntent extends Intent {}
 class RenameFileIntent extends Intent {}
 class DeleteFileIntent extends Intent {}
+class CloseWindowIntent extends Intent {}
