@@ -37,10 +37,10 @@ class MyApp extends StatefulWidget {
   MyApp(this.startPath, {Key? key}) : super(key: key) {
     final allowedExtensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".wbmp"}; // should match the ones in Info.plist!
     files = Directory(path.dirname(startPath))
-      .listSync()                                                                      // get all folder children
-      .whereType<File>()                                                               // filter out directories
-      .where((f) => allowedExtensions.contains(path.extension(f.path).toLowerCase()))  // filter by extension
-      .toList();
+        .listSync()                                                                      // get all folder children
+        .whereType<File>()                                                               // filter out directories
+        .where((f) => allowedExtensions.contains(path.extension(f.path).toLowerCase()))  // filter by extension
+        .toList();
     files.sort((a, b) => a.path.compareTo(b.path));
   }
 
@@ -65,41 +65,41 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     windowManager.setTitle(path.basename(currentFile.path) + (rotateAngleDegrees % 360 == 0 ? "" : "*"));
-    final app = Shortcuts(
-      shortcuts: {
-        SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowUp):                                                  RotateClockwiseIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowDown):                                                RotateCounterclockwiseIntent(),
-        SingleActivator(LogicalKeyboardKey.delete):                                                   DeleteFileIntent(),
-        SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
-        SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
-        SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
-        SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
-        SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
-        SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
-      },
-      child: Actions(
-        actions: {
-          NextImageIntent:              CallbackAction(onInvoke: (_) => _nextImage()),
-          PreviousImageIntent:          CallbackAction(onInvoke: (_) => _previousImage()),
-          RotateClockwiseIntent:        CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees += 90;})),
-          RotateCounterclockwiseIntent: CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees -= 90;})),
-          DeleteFileIntent:             CallbackAction(onInvoke: (_) => _deleteFile()),
-          SaveFileIntent:               CallbackAction(onInvoke: (_) => _saveFile()),
-          RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context)),
-          CloseWindowIntent:            CallbackAction(onInvoke: (_) => exit(0)),
+    final app = Shortcuts( // Use Flutter v3.3.10+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
+        shortcuts: {
+          SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowUp):                                                  RotateClockwiseIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowDown):                                                RotateCounterclockwiseIntent(),
+          SingleActivator(LogicalKeyboardKey.delete):                                                   DeleteFileIntent(),
+          SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
+          SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
+          SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
+          SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
+          SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
+          SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
         },
-        child: Focus(              // needed for Shortcuts
-          autofocus: true,         // focused by default
-          child: Transform.rotate(
-            angle: rotateAngleDegrees * pi / 180,
-            child: forceLoad
-              ? Image.memory(currentFile.readAsBytesSync(), key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
-              : Image.file  (currentFile,                   key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
-          )
+        child: Actions(
+            actions: {
+              NextImageIntent:              CallbackAction(onInvoke: (_) => _nextImage()),
+              PreviousImageIntent:          CallbackAction(onInvoke: (_) => _previousImage()),
+              RotateClockwiseIntent:        CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees += 90;})),
+              RotateCounterclockwiseIntent: CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees -= 90;})),
+              DeleteFileIntent:             CallbackAction(onInvoke: (_) => _deleteFile()),
+              SaveFileIntent:               CallbackAction(onInvoke: (_) => _saveFile()),
+              RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context)),
+              CloseWindowIntent:            CallbackAction(onInvoke: (_) => exit(0)),
+            },
+            child: Focus(              // needed for Shortcuts
+                autofocus: true,         // focused by default
+                child: Transform.rotate(
+                    angle: rotateAngleDegrees * pi / 180,
+                    child: forceLoad
+                        ? Image.memory(currentFile.readAsBytesSync(), key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
+                        : Image.file  (currentFile,                   key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
+                )
+            )
         )
-      )
     );
     forceLoad = false;
     return app;
@@ -144,8 +144,8 @@ class _MyAppState extends State<MyApp> {
     if (rotateAngleDegrees % 360 != 0) {
       (imageKey.currentWidget as Image).image.evict();    // reset cache for current image
       final oldImage = img.decodeImage(currentFile.readAsBytesSync())!;
-      final newImage = img.copyRotate(oldImage, rotateAngleDegrees);
-      final bytes = img.encodeNamedImage(newImage, currentFile.path)!;
+      final newImage = img.copyRotate(oldImage, angle: rotateAngleDegrees);
+      final bytes = img.encodeNamedImage(currentFile.path, newImage)!;
       currentFile.writeAsBytesSync(bytes, flush: true);
       setState(() {
         forceLoad = true;                                 // force reload current image from disk

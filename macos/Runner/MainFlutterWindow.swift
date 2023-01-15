@@ -2,7 +2,7 @@ import Cocoa
 import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
-    open var currentFile: String?
+  open var currentFile: String?
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController.init()
