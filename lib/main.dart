@@ -1,12 +1,12 @@
 // ignore_for_file: prefer_const_constructors, curly_braces_in_flow_control_structures
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
 import 'package:file_picker/file_picker.dart';
 import 'package:prompt_dialog/prompt_dialog.dart';
+import 'package:extended_image/extended_image.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_platform_alert/flutter_platform_alert.dart';
 
@@ -14,7 +14,7 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
   final startFile = await getStartFile(args);
-  runApp(MaterialApp(home: Scaffold(body: MyApp(startFile))));
+  runApp(MaterialApp(debugShowCheckedModeBanner: false, home: Scaffold(body: MyApp(startFile))));
 }
 
 /// Returns a file that has been opened with our App (or "" if a user cancels OpenFileDialog)
@@ -49,11 +49,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final imageKey = GlobalKey();
+  final imageKey = GlobalKey(); // TODO need it?
+  final editorKey = GlobalKey<ExtendedImageEditorState>();
   late File currentFile;
   late int index;
-  int rotateAngleDegrees = 0;
-  bool forceLoad = false;
+  ExtendedImageMode mode = ExtendedImageMode.gesture;
+  // bool forceLoad = false; TODO
 
   @override
   void initState() {
@@ -64,115 +65,191 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    windowManager.setTitle(path.basename(currentFile.path) + (rotateAngleDegrees % 360 == 0 ? "" : "*"));
-    final app = Shortcuts( // Use Flutter v3.3.10+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
-        shortcuts: {
-          SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowUp):                                                  RotateClockwiseIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowDown):                                                RotateCounterclockwiseIntent(),
-          SingleActivator(LogicalKeyboardKey.delete):                                                   DeleteFileIntent(),
-          SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
-          SingleActivator(LogicalKeyboardKey.keyS, meta: Platform.isMacOS, control: !Platform.isMacOS): SaveFileIntent(),
-          SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
-          SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
-          SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
-          SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
+    changeWindowTitle();
+    final app = Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
+      shortcuts: {
+        SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowUp):                                                  RotateClockwiseIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowDown):                                                RotateCounterclockwiseIntent(),
+        SingleActivator(LogicalKeyboardKey.delete):                                                   DeleteFileIntent(),
+        SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
+        SingleActivator(LogicalKeyboardKey.enter):                                                    SaveFileIntent(),
+        SingleActivator(LogicalKeyboardKey.escape):                                                   SetModeViewerIntent(),
+        SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
+        SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
+        SingleActivator(LogicalKeyboardKey.keyE, meta: Platform.isMacOS, control: !Platform.isMacOS): SwitchModeIntent(),
+        SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
+        SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
+        SingleActivator(LogicalKeyboardKey.f3):                                                       SwitchModeIntent(),
+      },
+      child: Actions(
+        actions: {
+          NextImageIntent:              CallbackAction(onInvoke: (_) => _nextImage()),
+          PreviousImageIntent:          CallbackAction(onInvoke: (_) => _previousImage()),
+          RotateClockwiseIntent:        CallbackAction(onInvoke: (_) => _rotateClockwise()),
+          RotateCounterclockwiseIntent: CallbackAction(onInvoke: (_) => _rotateCounterclockwise()),
+          DeleteFileIntent:             CallbackAction(onInvoke: (_) => _deleteFile()),
+          SaveFileIntent:               CallbackAction(onInvoke: (_) => _saveFile()),
+          RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context)),
+          SwitchModeIntent:             CallbackAction(onInvoke: (_) => _switchMode()),
+          SetModeViewerIntent:          CallbackAction(onInvoke: (_) => _setModeToViewer()),
+          CloseWindowIntent:            CallbackAction(onInvoke: (_) => exit(0)),
         },
-        child: Actions(
-            actions: {
-              NextImageIntent:              CallbackAction(onInvoke: (_) => _nextImage()),
-              PreviousImageIntent:          CallbackAction(onInvoke: (_) => _previousImage()),
-              RotateClockwiseIntent:        CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees += 90;})),
-              RotateCounterclockwiseIntent: CallbackAction(onInvoke: (_) => setState(() {rotateAngleDegrees -= 90;})),
-              DeleteFileIntent:             CallbackAction(onInvoke: (_) => _deleteFile()),
-              SaveFileIntent:               CallbackAction(onInvoke: (_) => _saveFile()),
-              RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context)),
-              CloseWindowIntent:            CallbackAction(onInvoke: (_) => exit(0)),
-            },
-            child: Focus(              // needed for Shortcuts
-                autofocus: true,         // focused by default
-                child: Transform.rotate(
-                    angle: rotateAngleDegrees * pi / 180,
-                    child: forceLoad
-                        ? Image.memory(currentFile.readAsBytesSync(), key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
-                        : Image.file  (currentFile,                   key: imageKey, fit: BoxFit.scaleDown, width: double.infinity, height: double.infinity, alignment: Alignment.center)
-                )
-            )
+        child: Focus(              // needed for Shortcuts
+          autofocus: true,         // focused by default
+          child: ExtendedImage.file(
+            currentFile,
+            key: imageKey,
+            mode: mode,
+            fit: mode == ExtendedImageMode.editor ? BoxFit.contain : null, // for Editor mode BoxFit must be "contain"
+            width: double.infinity,
+            height: double.infinity,
+            extendedImageEditorKey: editorKey,
+            cacheRawData: true, // to access "rawImageData" in _saveFile() method, this must be "true"
+          )
         )
+      )
     );
-    forceLoad = false;
+    // forceLoad = false; TODO
     return app;
   }
 
-  void _nextImage() {
-    if (index < widget.files.length - 1) {
+  // SWITCH MODE
+  void _switchMode() {
+    setState(() {
+      mode = mode == ExtendedImageMode.editor ? ExtendedImageMode.gesture : ExtendedImageMode.editor;
+    });
+  }
+
+  void _setModeToViewer() {
+    if (mode == ExtendedImageMode.editor) {
       setState(() {
-        index++;
-        currentFile = widget.files[index];
-        rotateAngleDegrees = 0;
+        mode = ExtendedImageMode.gesture;
       });
+    }
+  }
+
+  // VIEW MODE FUNCTIONS
+  void _nextImage() {
+    if (mode == ExtendedImageMode.gesture) {
+      if (index < widget.files.length - 1) {
+        setState(() {
+          index++;
+          currentFile = widget.files[index];
+        });
+      }
     }
   }
 
   void _previousImage() {
-    if (index > 0) {
-      setState(() {
-        index--;
-        currentFile = widget.files[index];
-        rotateAngleDegrees = 0;
-      });
+    if (mode == ExtendedImageMode.gesture) {
+      if (index > 0) {
+        setState(() {
+          index--;
+          currentFile = widget.files[index];
+        });
+      }
     }
   }
 
   void _deleteFile() async {
-    const title = "Delete file?";
-    final text = 'Remove file "${path.basename(currentFile.path)}"?';
-    if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
-      currentFile.deleteSync();
-      widget.files.removeAt(index);
-      if (widget.files.isEmpty) exit(0);
-      else setState(() {
-        if (index >= widget.files.length) index--; // if we deleted last file => switch pointer to previous
-        currentFile = widget.files[index];
-        rotateAngleDegrees = 0;
-      });
-    }
-  }
-
-  void _saveFile() {
-    if (rotateAngleDegrees % 360 != 0) {
-      (imageKey.currentWidget as Image).image.evict();    // reset cache for current image
-      final oldImage = img.decodeImage(currentFile.readAsBytesSync())!;
-      final newImage = img.copyRotate(oldImage, angle: rotateAngleDegrees);
-      final bytes = img.encodeNamedImage(currentFile.path, newImage)!;
-      currentFile.writeAsBytesSync(bytes, flush: true);
-      setState(() {
-        forceLoad = true;                                 // force reload current image from disk
-        rotateAngleDegrees = 0;
-      });
+    if (mode == ExtendedImageMode.gesture) {
+      const title = "Delete file?";
+      final text = 'Remove file "${path.basename(currentFile.path)}"?';
+      if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
+        currentFile.deleteSync();
+        widget.files.removeAt(index);
+        if (widget.files.isEmpty) exit(0);
+        else setState(() {
+          if (index >= widget.files.length) index--; // if we deleted last file => switch pointer to previous
+          currentFile = widget.files[index];
+        });
+      }
     }
   }
 
   void _renameFile(BuildContext context) async {
-    // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
-    // also, set "barrierDismissible" to 'true' to allow ESC button
-    final currentName = path.basenameWithoutExtension(currentFile.path);
-    final extension = path.extension(currentFile.path);
-    final newName = await prompt(context, title: Text('Rename file "$currentName" ($extension)?'), initialValue: currentName, barrierDismissible: true, validator: _validateFilename );
-    if (newName != null && newName.isNotEmpty && newName != currentName) {
-      // Note: pass "/the/full/path.jpg" to "renameSync()" (not "newName.jpg").
-      // Although "newName" is also supported by Dart (just renaming a file), it will work out only if
-      // the working directory is the same as the file location, which is not always the case.
-      // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
-      final newPath = path.join(path.dirname(currentFile.path), "$newName$extension");
-      final newFile = currentFile.renameSync(newPath);
-      widget.files.removeAt(index);
-      widget.files.insert(index, newFile);
-      setState(() {
-        currentFile = widget.files[index];
-      });
+    if (mode == ExtendedImageMode.gesture) {
+      // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
+      // also, set "barrierDismissible" to 'true' to allow ESC button
+      final currentName = path.basenameWithoutExtension(currentFile.path);
+      final extension = path.extension(currentFile.path);
+      final newName = await prompt(context, title: Text('Rename file "$currentName" ($extension)?'), initialValue: currentName, barrierDismissible: true, validator: _validateFilename );
+      if (newName != null && newName.isNotEmpty && newName != currentName) {
+        // Note: pass "/the/full/path.jpg" to "renameSync()" (not "newName.jpg").
+        // Although "newName" is also supported by Dart (just renaming a file), it will work out only if
+        // the working directory is the same as the file location, which is not always the case.
+        // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
+        final newPath = path.join(path.dirname(currentFile.path), "$newName$extension");
+        final newFile = currentFile.renameSync(newPath);
+        widget.files.removeAt(index);
+        widget.files.insert(index, newFile);
+        setState(() {
+          currentFile = widget.files[index];
+        });
+      }
     }
+  }
+
+  // EDITOR MODE FUNCTIONS
+  bool get isChanged {
+    // TODO smth wrong!
+    if (mode == ExtendedImageMode.editor) {
+      final ExtendedImageEditorState? state = editorKey.currentState;
+      if (state != null) { // may be NULL
+        final EditActionDetails action = state.editAction!;
+        return action.hasEditAction || action.needCrop;
+      }
+    }
+    return false;
+  }
+
+  void _rotateClockwise() {
+    if (mode == ExtendedImageMode.editor) {
+      editorKey.currentState!.rotate(right: true);
+      windowManager.setTitle(path.basename(currentFile.path) + (isChanged ? "*" : ""));
+    }
+  }
+
+  void _rotateCounterclockwise() {
+    if (mode == ExtendedImageMode.editor) {
+      editorKey.currentState!.rotate(right: false);
+      windowManager.setTitle(path.basename(currentFile.path) + (isChanged ? "*" : ""));
+    }
+  }
+
+  void _saveFile() {
+    if (mode == ExtendedImageMode.editor) {
+      if (isChanged) {
+        print("SAVING!"); // TODO remove
+        final ExtendedImageEditorState state = editorKey.currentState!;
+        final EditActionDetails action = state.editAction!;
+        final Rect cropRect = state.getCropRect()!;
+        final Uint8List data = state.rawImageData; // set "cacheRawData: true" in ExtendedImage to access this field
+
+        img.Image image = img.decodeImage(data)!;
+        if (action.needCrop) {
+          image = img.copyCrop(image, x: cropRect.left.toInt(), y: cropRect.top.toInt(), width: cropRect.width.toInt(), height: cropRect.height.toInt());
+        }
+        if (action.hasRotateAngle) {
+          image = img.copyRotate(image, angle: action.rotateAngle);
+        }
+        //(imageKey.currentWidget as ExtendedImage).image.evict();    // reset cache for current image TODO
+
+        final Uint8List bytes = img.encodeNamedImage(currentFile.path, image)!;
+        currentFile.writeAsBytesSync(bytes, flush: true);
+        setState(() {
+          //state.reset(); // TODO
+          // forceLoad = true;                                 // force reload current image from disk TODO
+        });
+      }
+    }
+  }
+
+  // OTHER FUNCTIONS
+  void changeWindowTitle() {
+    windowManager.setTitle(path.basename(currentFile.path) + (mode == ExtendedImageMode.editor ? " [Editor Mode]" : ""));
   }
 
   String? _validateFilename(String? s) {
@@ -201,3 +278,5 @@ class SaveFileIntent extends Intent {}
 class RenameFileIntent extends Intent {}
 class DeleteFileIntent extends Intent {}
 class CloseWindowIntent extends Intent {}
+class SwitchModeIntent extends Intent {}
+class SetModeViewerIntent extends Intent {}
