@@ -239,10 +239,12 @@ class _MyAppState extends State<MyApp> {
 
         final Uint8List bytes = img.encodeNamedImage(currentFile.path, image)!;
         currentFile.writeAsBytesSync(bytes, flush: true);
-        setState(() {
+        clearMemoryImageCache(); // TODO check
+        _setModeToViewer();
+        //setState(() {
           //state.reset(); // TODO
           // forceLoad = true;                                 // force reload current image from disk TODO
-        });
+        //});
       }
     }
   }
