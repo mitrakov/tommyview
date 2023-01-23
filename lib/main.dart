@@ -49,12 +49,11 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final imageKey = GlobalKey(); // TODO need it?
   final editorKey = GlobalKey<ExtendedImageEditorState>();
   late File currentFile;
   late int index;
   ExtendedImageMode mode = ExtendedImageMode.gesture;
-  // bool forceLoad = false; TODO
+  bool forceLoad = false; // force load flag used in _saveFile() to reload the image
 
   @override
   void initState() {
@@ -66,7 +65,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     changeWindowTitle();
-    final app = Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
+    return Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
       shortcuts: {
         SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
         SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
@@ -98,21 +97,18 @@ class _MyAppState extends State<MyApp> {
         },
         child: Focus(              // needed for Shortcuts
           autofocus: true,         // focused by default
-          child: ExtendedImage.file(
-            currentFile,
-            key: imageKey,
-            mode: mode,
-            fit: mode == ExtendedImageMode.editor ? BoxFit.contain : null, // for Editor mode BoxFit must be "contain"
-            width: double.infinity,
-            height: double.infinity,
-            extendedImageEditorKey: editorKey,
-            cacheRawData: true, // to access "rawImageData" in _saveFile() method, this must be "true"
-          )
+          child: Builder(builder: (c) {
+            // 1) for Editor mode BoxFit must be "contain"
+            // 2) to access "rawImageData" in _saveFile() method, cacheRawData must be "true"
+            final result = forceLoad
+              ? ExtendedImage.memory(currentFile.readAsBytesSync(), mode: mode, fit: mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
+              : ExtendedImage.file  (currentFile,                   mode: mode, fit: mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
+            forceLoad = false;
+            return result;
+          })
         )
       )
     );
-    // forceLoad = false; TODO
-    return app;
   }
 
   // SWITCH MODE
@@ -194,7 +190,7 @@ class _MyAppState extends State<MyApp> {
 
   // EDITOR MODE FUNCTIONS
   bool get isChanged {
-    // TODO smth wrong!
+    // TODO smth wrong! Check!
     if (mode == ExtendedImageMode.editor) {
       final ExtendedImageEditorState? state = editorKey.currentState;
       if (state != null) { // may be NULL
@@ -208,50 +204,46 @@ class _MyAppState extends State<MyApp> {
   void _rotateClockwise() {
     if (mode == ExtendedImageMode.editor) {
       editorKey.currentState!.rotate(right: true);
-      windowManager.setTitle(path.basename(currentFile.path) + (isChanged ? "*" : ""));
+      changeWindowTitle();
     }
   }
 
   void _rotateCounterclockwise() {
     if (mode == ExtendedImageMode.editor) {
       editorKey.currentState!.rotate(right: false);
-      windowManager.setTitle(path.basename(currentFile.path) + (isChanged ? "*" : ""));
+      changeWindowTitle();
     }
   }
 
   void _saveFile() {
     if (mode == ExtendedImageMode.editor) {
       if (isChanged) {
-        print("SAVING!"); // TODO remove
         final ExtendedImageEditorState state = editorKey.currentState!;
         final EditActionDetails action = state.editAction!;
         final Rect cropRect = state.getCropRect()!;
         final Uint8List data = state.rawImageData; // set "cacheRawData: true" in ExtendedImage to access this field
 
-        img.Image image = img.decodeImage(data)!;
+        img.Image image = img.decodeImage(data)!;  // use v4.0.11+, because: https://github.com/brendan-duncan/image/issues/460
         if (action.needCrop) {
           image = img.copyCrop(image, x: cropRect.left.toInt(), y: cropRect.top.toInt(), width: cropRect.width.toInt(), height: cropRect.height.toInt());
         }
         if (action.hasRotateAngle) {
           image = img.copyRotate(image, angle: action.rotateAngle);
         }
-        //(imageKey.currentWidget as ExtendedImage).image.evict();    // reset cache for current image TODO
 
         final Uint8List bytes = img.encodeNamedImage(currentFile.path, image)!;
         currentFile.writeAsBytesSync(bytes, flush: true);
-        clearMemoryImageCache(); // TODO check
-        _setModeToViewer();
-        //setState(() {
-          //state.reset(); // TODO
-          // forceLoad = true;                                 // force reload current image from disk TODO
-        //});
+        clearMemoryImageCache(); // clear image cache
+        forceLoad = true;        // force reload current image from disk
+        _setModeToViewer();      // go back to "View" mode
       }
     }
   }
 
   // OTHER FUNCTIONS
   void changeWindowTitle() {
-    windowManager.setTitle(path.basename(currentFile.path) + (mode == ExtendedImageMode.editor ? " [Editor Mode]" : ""));
+    final title = "${path.basename(currentFile.path)} ${mode == ExtendedImageMode.editor ? " [Editor Mode]" : ""} ${isChanged ? "*" : ""}";
+    windowManager.setTitle(title);
   }
 
   String? _validateFilename(String? s) {
