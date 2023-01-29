@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, curly_braces_in_flow_control_structures
+// ignore_for_file: prefer_const_constructors, curly_braces_in_flow_control_structures, use_build_context_synchronously
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +10,8 @@ import 'package:extended_image/extended_image.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_platform_alert/flutter_platform_alert.dart';
 
+/// Bugs and Feature requests:
+/// –
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
@@ -165,27 +167,38 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  void _renameFile(BuildContext context) async {
+  void _renameFile(BuildContext context, {String? initialText}) async {
     if (mode == ExtendedImageMode.gesture) {
       // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
       // also, set "barrierDismissible" to 'true' to allow ESC button
       final currentName = path.basenameWithoutExtension(currentFile.path);
       final extension = path.extension(currentFile.path);
-      final newName = await prompt(context, title: Text('Rename file "$currentName" ($extension)?'), initialValue: currentName, barrierDismissible: true, validator: _validateFilename );
+      final initialValue = initialText ?? currentName;
+      final newName = await prompt(context, title: Text('Rename file "$currentName" ($extension)?'), initialValue: initialValue, barrierDismissible: true, validator: _validateFilename );
       if (newName != null && newName.isNotEmpty && newName != currentName) {
-        // Note: pass "/the/full/path.jpg" to "renameSync()" (not "newName.jpg").
-        // Although "newName" is also supported by Dart (just renaming a file), it will work out only if
-        // the working directory is the same as the file location, which is not always the case.
-        // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
         final newPath = path.join(path.dirname(currentFile.path), "$newName$extension");
-        final newFile = currentFile.renameSync(newPath);
-        widget.files.removeAt(index);
-        widget.files.insert(index, newFile);
-        setState(() {
-          currentFile = widget.files[index];
-        });
+        if (File(newPath).existsSync()) {
+          const title = "Overwrite file?";
+          final text = "Filename '$newName' already exists. Overwrite?";
+          if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton)
+            _renameFileImpl(newPath);
+          else _renameFile(context, initialText: newName);
+        } else _renameFileImpl(newPath);
       }
     }
+  }
+
+  void _renameFileImpl(String newPath) {
+    // Note: pass "/the/full/path.jpg" to "renameSync()" (not "newName.jpg").
+    // Although "newName" is also supported by Dart (just renaming a file), it will work out only if
+    // the working directory is the same as the file location, which is not always the case.
+    // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
+    final newFile = currentFile.renameSync(newPath);
+    widget.files.removeAt(index);
+    widget.files.insert(index, newFile);
+    setState(() {
+      currentFile = widget.files[index];
+    });
   }
 
   // EDITOR MODE FUNCTIONS
