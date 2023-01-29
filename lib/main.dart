@@ -11,7 +11,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:flutter_platform_alert/flutter_platform_alert.dart';
 
 /// Bugs and Feature requests:
-/// –
+/// rm prompt_dialog
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
