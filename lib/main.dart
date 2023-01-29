@@ -51,19 +51,19 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final editorKey = GlobalKey<ExtendedImageEditorState>(); // TODO rename to _ in separate commit
-  late File currentFile;
-  late int index;
-  ExtendedImageMode mode = ExtendedImageMode.gesture;
+  final editorKey = GlobalKey<ExtendedImageEditorState>();
+  late File _currentFile;
+  late int _index;
+  ExtendedImageMode _mode = ExtendedImageMode.gesture;
   int _rotate = 0;
-  bool forceLoad = false; // force load flag used in _saveFile() to reload the image
+  bool _forceLoad = false; // force load flag used in _saveFile() to reload the image
   bool get isRotated => _rotate % 4 > 0;
 
   @override
   void initState() {
     super.initState();
-    currentFile = widget.files.firstWhere((f) => f.path == widget.startPath, orElse: () => widget.files.first);
-    index = widget.files.indexOf(currentFile);
+    _currentFile = widget.files.firstWhere((f) => f.path == widget.startPath, orElse: () => widget.files.first);
+    _index = widget.files.indexOf(_currentFile);
   }
 
   @override
@@ -106,10 +106,10 @@ class _MyAppState extends State<MyApp> {
             child: Builder(builder: (c) {
               // 1) for Editor mode BoxFit must be "contain"
               // 2) to access "rawImageData" in _saveFile() method, cacheRawData must be "true"
-              final result = forceLoad
-                  ? ExtendedImage.memory(currentFile.readAsBytesSync(), mode: mode, fit: mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
-                  : ExtendedImage.file  (currentFile,                   mode: mode, fit: mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
-              forceLoad = false;
+              final result = _forceLoad
+                  ? ExtendedImage.memory(_currentFile.readAsBytesSync(), mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
+                  : ExtendedImage.file  (_currentFile,                   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
+              _forceLoad = false;
               return result;
             })
           )
@@ -119,30 +119,30 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _changeWindowTitle() {
-    final title = "${path.basename(currentFile.path)}${isRotated ? "*" : ""} ${mode == ExtendedImageMode.editor ? " [Crop Mode]" : ""}";
+    final title = "${path.basename(_currentFile.path)}${isRotated ? "*" : ""} ${_mode == ExtendedImageMode.editor ? " [Crop Mode]" : ""}";
     windowManager.setTitle(title);
   }
 
   void _switchMode() {
     setState(() {
-      mode = mode == ExtendedImageMode.editor ? ExtendedImageMode.gesture : ExtendedImageMode.editor;
+      _mode = _mode == ExtendedImageMode.editor ? ExtendedImageMode.gesture : ExtendedImageMode.editor;
       _rotate = 0;
     });
   }
 
   void _setModeToViewer() {
     setState(() {
-      mode = ExtendedImageMode.gesture;
+      _mode = ExtendedImageMode.gesture;
       _rotate = 0;
     });
   }
 
   void _nextImage() {
-    if (mode == ExtendedImageMode.gesture) {
-      if (index < widget.files.length - 1) {
+    if (_mode == ExtendedImageMode.gesture) {
+      if (_index < widget.files.length - 1) {
         setState(() {
-          index++;
-          currentFile = widget.files[index];
+          _index++;
+          _currentFile = widget.files[_index];
           _rotate = 0;
         });
       }
@@ -150,11 +150,11 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _previousImage() {
-    if (mode == ExtendedImageMode.gesture) {
-      if (index > 0) {
+    if (_mode == ExtendedImageMode.gesture) {
+      if (_index > 0) {
         setState(() {
-          index--;
-          currentFile = widget.files[index];
+          _index--;
+          _currentFile = widget.files[_index];
           _rotate = 0;
         });
       }
@@ -162,7 +162,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _rotateClockwise() {
-    if (mode == ExtendedImageMode.gesture) {
+    if (_mode == ExtendedImageMode.gesture) {
       setState(() {
         _rotate++;
       });
@@ -170,7 +170,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _rotateCounterclockwise() {
-    if (mode == ExtendedImageMode.gesture) {
+    if (_mode == ExtendedImageMode.gesture) {
       setState(() {
         _rotate--;
       });
@@ -178,31 +178,31 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _deleteFile() async {
-    if (mode == ExtendedImageMode.gesture) {
+    if (_mode == ExtendedImageMode.gesture) {
       const title = "Delete file?";
-      final text = 'Remove file "${path.basename(currentFile.path)}"?';
+      final text = 'Remove file "${path.basename(_currentFile.path)}"?';
       if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
-        currentFile.deleteSync();
-        widget.files.removeAt(index);
+        _currentFile.deleteSync();
+        widget.files.removeAt(_index);
         if (widget.files.isEmpty) exit(0);
         else setState(() {
-          if (index >= widget.files.length) index--; // if we deleted last file => switch pointer to previous
-          currentFile = widget.files[index];
+          if (_index >= widget.files.length) _index--; // if we deleted last file => switch pointer to previous
+          _currentFile = widget.files[_index];
         });
       }
     }
   }
 
   void _renameFile(BuildContext context, {String? initialText}) async {
-    if (mode == ExtendedImageMode.gesture) {
+    if (_mode == ExtendedImageMode.gesture) {
       // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
       // also, set "barrierDismissible" to 'true' to allow ESC button
-      final currentName = path.basenameWithoutExtension(currentFile.path);
-      final extension = path.extension(currentFile.path);
+      final currentName = path.basenameWithoutExtension(_currentFile.path);
+      final extension = path.extension(_currentFile.path);
       final initialValue = initialText ?? currentName;
       final newName = await prompt(context, title: Text('Rename file "$currentName" ($extension)?'), initialValue: initialValue, barrierDismissible: true, validator: _validateFilename );
       if (newName != null && newName.isNotEmpty && newName != currentName) {
-        final newPath = path.join(path.dirname(currentFile.path), "$newName$extension");
+        final newPath = path.join(path.dirname(_currentFile.path), "$newName$extension");
         if (File(newPath).existsSync()) {
           const title = "Overwrite file?";
           final text = "Filename '$newName' already exists. Overwrite?";
@@ -219,22 +219,22 @@ class _MyAppState extends State<MyApp> {
     // Although "newName" is also supported by Dart (just renaming a file), it will work out only if
     // the working directory is the same as the file location, which is not always the case.
     // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
-    final newFile = currentFile.renameSync(newPath);
-    widget.files.removeAt(index);
-    widget.files.insert(index, newFile);
+    final newFile = _currentFile.renameSync(newPath);
+    widget.files.removeAt(_index);
+    widget.files.insert(_index, newFile);
     setState(() {
-      currentFile = widget.files[index];
+      _currentFile = widget.files[_index];
     });
   }
 
   void _saveFile() {
-    switch (mode) {
+    switch (_mode) {
       case ExtendedImageMode.gesture:
         if (isRotated) {
-          final data = currentFile.readAsBytesSync(); // TODO optimize?
+          final data = _currentFile.readAsBytesSync();
           final image = img.decodeImage(data)!;
-          final rotatedimage = img.copyRotate(image, angle: _rotate * 90);
-          final Uint8List bytes = img.encodeNamedImage(currentFile.path, rotatedimage)!;
+          final rotatedImage = img.copyRotate(image, angle: _rotate * 90);
+          final Uint8List bytes = img.encodeNamedImage(_currentFile.path, rotatedImage)!;
           _saveFileImpl(bytes);
         }
         break;
@@ -246,7 +246,7 @@ class _MyAppState extends State<MyApp> {
         final image = img.decodeImage(data)!;  // use v4.0.11+, because: https://github.com/brendan-duncan/image/issues/460
         if (action.needCrop) {
           final croppedImage = img.copyCrop(image, x: cropRect.left.toInt(), y: cropRect.top.toInt(), width: cropRect.width.toInt(), height: cropRect.height.toInt());
-          final Uint8List bytes = img.encodeNamedImage(currentFile.path, croppedImage)!;
+          final Uint8List bytes = img.encodeNamedImage(_currentFile.path, croppedImage)!;
           _saveFileImpl(bytes);
         }
         break;
@@ -255,10 +255,10 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _saveFileImpl(Uint8List bytes) {
-    currentFile.writeAsBytesSync(bytes, flush: true);
+    _currentFile.writeAsBytesSync(bytes, flush: true);
     clearMemoryImageCache(); // clear image cache
     setState(() {
-      forceLoad = true;      // force reload current image from disk
+      _forceLoad = true;      // force reload current image from disk
       _setModeToViewer();
     });
   }
