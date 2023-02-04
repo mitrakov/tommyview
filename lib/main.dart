@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
-import 'package:image/image.dart' as img;
+import 'package:image_editor/image_editor.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:prompt_dialog/prompt_dialog.dart';
 import 'package:extended_image/extended_image.dart';
@@ -52,6 +52,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final editorKey = GlobalKey<ExtendedImageEditorState>();
+  final extImgKey = GlobalKey(); // key to access ExtendedImage widget
   late File _currentFile;
   late int _index;
   ExtendedImageMode _mode = ExtendedImageMode.gesture;
@@ -107,8 +108,8 @@ class _MyAppState extends State<MyApp> {
               // 1) for Editor mode BoxFit must be "contain"
               // 2) to access "rawImageData" in _saveFile() method, cacheRawData must be "true"
               final result = _forceLoad
-                  ? ExtendedImage.memory(_currentFile.readAsBytesSync(), mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
-                  : ExtendedImage.file  (_currentFile,                   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
+                ? ExtendedImage.memory(key: extImgKey, _currentFile.readAsBytesSync(), mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
+                : ExtendedImage.file  (key: extImgKey, _currentFile,                   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
               _forceLoad = false;
               return result;
             })
@@ -227,31 +228,28 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void _saveFile() {
+  void _saveFile() async {
+    final option = ImageEditorOption();
     switch (_mode) {
       case ExtendedImageMode.gesture:
         if (isRotated) {
-          final data = _currentFile.readAsBytesSync();
-          final image = img.decodeImage(data)!;
-          final rotatedImage = img.copyRotate(image, angle: _rotate * 90);
-          final Uint8List bytes = img.encodeNamedImage(_currentFile.path, rotatedImage)!;
-          _saveFileImpl(bytes);
+          option.addOption(RotateOption(_rotate * 90));
         }
         break;
       case ExtendedImageMode.editor:
         final state = editorKey.currentState!;
         final action = state.editAction!;
         final cropRect = state.getCropRect()!;
-        final data = state.rawImageData; // set "cacheRawData: true" in ExtendedImage to access this field
-        final image = img.decodeImage(data)!;  // use v4.0.11+, because: https://github.com/brendan-duncan/image/issues/460
         if (action.needCrop) {
-          final croppedImage = img.copyCrop(image, x: cropRect.left.toInt(), y: cropRect.top.toInt(), width: cropRect.width.toInt(), height: cropRect.height.toInt());
-          final Uint8List bytes = img.encodeNamedImage(_currentFile.path, croppedImage)!;
-          _saveFileImpl(bytes);
+          option.addOption(ClipOption(x: cropRect.left, y: cropRect.top, width: cropRect.width, height: cropRect.height));
         }
         break;
       default:
     }
+    final widget = extImgKey.currentWidget as ExtendedImage; // editorKey cannot be used here!
+    final imageProvider = widget.image as ExtendedFileImageProvider;
+    final bytes = await ImageEditor.editImage(image: imageProvider.rawImageData, imageEditorOption: option);
+    _saveFileImpl(bytes!);
   }
 
   void _saveFileImpl(Uint8List bytes) {
