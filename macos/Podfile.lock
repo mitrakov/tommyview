@@ -2,6 +2,9 @@ PODS:
   - flutter_platform_alert (0.0.1):
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
+  - image_editor_common (1.0.0):
+    - Flutter
+    - FlutterMacOS
   - path_provider_macos (0.0.1):
     - FlutterMacOS
   - screen_retriever (0.0.1):
@@ -12,6 +15,7 @@ PODS:
 DEPENDENCIES:
   - flutter_platform_alert (from `Flutter/ephemeral/.symlinks/plugins/flutter_platform_alert/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - image_editor_common (from `Flutter/ephemeral/.symlinks/plugins/image_editor_common/macos`)
   - path_provider_macos (from `Flutter/ephemeral/.symlinks/plugins/path_provider_macos/macos`)
   - screen_retriever (from `Flutter/ephemeral/.symlinks/plugins/screen_retriever/macos`)
   - window_manager (from `Flutter/ephemeral/.symlinks/plugins/window_manager/macos`)
@@ -21,6 +25,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_platform_alert/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
+  image_editor_common:
+    :path: Flutter/ephemeral/.symlinks/plugins/image_editor_common/macos
   path_provider_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/path_provider_macos/macos
   screen_retriever:
@@ -31,10 +37,11 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   flutter_platform_alert: b21b2b7d801e71c12ce9ffab618ff114ca9fc903
   FlutterMacOS: ae6af50a8ea7d6103d888583d46bd8328a7e9811
+  image_editor_common: 1b11f59fad8909bafcdaa0f31cc9373425b58600
   path_provider_macos: 05fb0ef0cedf3e5bd179b9e41a638682b37133ea
   screen_retriever: 59634572a57080243dd1bf715e55b6c54f241a38
   window_manager: 3a1844359a6295ab1e47659b1a777e36773cd6e8
 
-PODFILE CHECKSUM: 6eac6b3292e5142cfc23bdeb71848a40ec51c14c
+PODFILE CHECKSUM: 0d3963a09fc94f580682bd88480486da345dc3f0
 
 COCOAPODS: 1.11.3
