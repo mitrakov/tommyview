@@ -56,8 +56,8 @@ class _MyAppState extends State<MyApp> {
   late File _currentFile;
   late int _index;
   ExtendedImageMode _mode = ExtendedImageMode.gesture;
-  int _rotate = 0;
-  bool _forceLoad = false; // force load flag used in _saveFile() to reload the image
+  int _rotate = 0;                     // in quarters (0=0°, 1=90°, 2=180°, etc.)
+  Uint8List _forceLoad = Uint8List(0); // force load flag used in _saveFile() to reload the image
   bool get isRotated => _rotate % 4 > 0;
 
   @override
@@ -107,10 +107,10 @@ class _MyAppState extends State<MyApp> {
             child: Builder(builder: (c) {
               // 1) for Editor mode BoxFit must be "contain"
               // 2) to access "rawImageData" in _saveFile() method, cacheRawData must be "true"
-              final result = _forceLoad
-                ? ExtendedImage.memory(key: extImgKey, _currentFile.readAsBytesSync(), mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
-                : ExtendedImage.file  (key: extImgKey, _currentFile,                   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
-              _forceLoad = false;
+              final result = _forceLoad.isNotEmpty
+                ? ExtendedImage.memory(key: extImgKey, _forceLoad,   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
+                : ExtendedImage.file  (key: extImgKey, _currentFile, mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
+              _forceLoad = Uint8List(0);
               return result;
             })
           )
@@ -246,19 +246,17 @@ class _MyAppState extends State<MyApp> {
         break;
       default:
     }
-    final widget = extImgKey.currentWidget as ExtendedImage; // editorKey cannot be used here!
-    final imageProvider = widget.image as ExtendedFileImageProvider;
-    final bytes = await ImageEditor.editImage(image: imageProvider.rawImageData, imageEditorOption: option);
-    _saveFileImpl(bytes!);
-  }
-
-  void _saveFileImpl(Uint8List bytes) {
-    _currentFile.writeAsBytesSync(bytes, flush: true);
-    clearMemoryImageCache(); // clear image cache
-    setState(() {
-      _forceLoad = true;      // force reload current image from disk
-      _setModeToViewer();
-    });
+    if (option.options.isNotEmpty) {
+      final widget = extImgKey.currentWidget as ExtendedImage;         // editorKey cannot be used here!
+      final imageProvider = widget.image as ExtendedFileImageProvider; // now it's always ExtendedFileImageProvider, but theoretically might be ExtendedMemoryImageProvider
+      final bytes = await ImageEditor.editImage(image: imageProvider.rawImageData, imageEditorOption: option);
+      _currentFile.writeAsBytesSync(bytes!, flush: true);
+      clearMemoryImageCache(); // clear image cache
+      setState(() {
+        _forceLoad = bytes;    // force reload current image from disk
+        _setModeToViewer();
+      });
+    } // else user pressed Enter for no reason
   }
 
   String? _validateFilename(String? s) {
