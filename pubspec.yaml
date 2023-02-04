@@ -2,7 +2,7 @@
 name: tommyview
 description: Simple free open source cross-platform images viewer and editor.
 
-version: 23.1.29+6
+version: 23.2.4+7
 
 environment:
   sdk: '>=2.18.0 <3.0.0'
@@ -13,10 +13,10 @@ dependencies:
   path: ^1.8.2                    # paths
   file_picker: ^5.2.5             # open-file dialog
   window_manager: ^0.3.0          # set title to window
-  image_editor: ^1.3.0            # don't use image: ^4.0.11 (it contains a lot of bugs)
+  image_editor: ^1.3.0            # image editor; don't use "image: ^4.0.11" (it contains a lot of bugs)
   flutter_platform_alert: ^0.3.0  # platform dialogs
   prompt_dialog: ^1.0.9           # input dialog
-  extended_image: ^6.3.4          # image editor
+  extended_image: ^6.3.4          # image viewer
 
 dev_dependencies:
   flutter_test:

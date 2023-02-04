@@ -229,7 +229,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _saveFile() async {
-    final option = ImageEditorOption();
+    final option = ImageEditorOption(); // AddTextOption, ClipOption, ColorOption, DrawOption, FlipOption, MaxImageOption, RotateOption, ScaleOption
     switch (_mode) {
       case ExtendedImageMode.gesture:
         if (isRotated) {
