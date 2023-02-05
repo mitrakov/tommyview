@@ -5,13 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:image_editor/image_editor.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:prompt_dialog/prompt_dialog.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_platform_alert/flutter_platform_alert.dart';
+import 'package:tommyview/prompt.dart';
 
-/// Bugs and Feature requests:
-/// rm prompt_dialog
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
@@ -200,8 +198,9 @@ class _MyAppState extends State<MyApp> {
       // also, set "barrierDismissible" to 'true' to allow ESC button
       final currentName = path.basenameWithoutExtension(_currentFile.path);
       final extension = path.extension(_currentFile.path);
+      final title = Text('Rename file "$currentName" ($extension)?');
       final initialValue = initialText ?? currentName;
-      final newName = await prompt(context, title: Text('Rename file "$currentName" ($extension)?'), initialValue: initialValue, barrierDismissible: true, validator: _validateFilename );
+      final newName = await prompt(context, title: title, initialValue: initialValue, barrierDismissible: true, validator: _validateFilename );
       if (newName != null && newName.isNotEmpty && newName != currentName) {
         final newPath = path.join(path.dirname(_currentFile.path), "$newName$extension");
         if (File(newPath).existsSync()) {
