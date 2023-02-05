@@ -1,4 +1,4 @@
-// from prompt_dialog: ^1.0.9
+// by prompt_dialog: ^1.0.9
 import 'package:flutter/material.dart';
 
 Future<String?> prompt(
@@ -90,10 +90,10 @@ class _PromptDialog extends StatefulWidget {
   final TextAlign textAlign;
 
   @override
-  __PromptDialogState createState() => __PromptDialogState();
+  _PromptDialogState createState() => _PromptDialogState();
 }
 
-class __PromptDialogState extends State<_PromptDialog> {
+class _PromptDialogState extends State<_PromptDialog> {
   late TextEditingController controller;
   late bool stateObscureText = widget.obscureText;
 
@@ -106,6 +106,9 @@ class __PromptDialogState extends State<_PromptDialog> {
     super.initState();
     controller = TextEditingController(text: widget.initialValue);
     value = widget.initialValue;
+    if (widget.isSelectedInitialValue) { // by: @mitrakov
+      controller.selection = TextSelection(baseOffset: 0, extentOffset: value?.length ?? 0);
+    }
   }
 
   @override
