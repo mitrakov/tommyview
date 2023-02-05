@@ -11,4 +11,4 @@ PRODUCT_NAME = TommyView
 PRODUCT_BUNDLE_IDENTIFIER = com.mitrakoff.self.tommyview
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2023 Artem Mitrakov, mitrakov-artem@yandex.ru
+PRODUCT_COPYRIGHT = Copyright © mitrakov-artem@yandex.ru, 2023 Artem Mitrakov
