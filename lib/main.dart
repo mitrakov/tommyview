@@ -1,14 +1,15 @@
 // ignore_for_file: prefer_const_constructors, curly_braces_in_flow_control_structures, use_build_context_synchronously
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:path/path.dart' as path;
-import 'package:image_editor/image_editor.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:extended_image/extended_image.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:flutter_platform_alert/flutter_platform_alert.dart';
-import 'package:tommyview/prompt.dart';
+import "dart:io";
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:package_info_plus/package_info_plus.dart";
+import "package:path/path.dart" as path;
+import "package:image_editor/image_editor.dart";
+import "package:file_picker/file_picker.dart";
+import "package:extended_image/extended_image.dart";
+import "package:window_manager/window_manager.dart";
+import "package:flutter_platform_alert/flutter_platform_alert.dart";
+import "package:tommyview/prompt.dart";
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,49 +69,85 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     _changeWindowTitle();
-    return Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
-      shortcuts: {
-        SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowUp):                                                  RotateClockwiseIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowDown):                                                RotateCounterclockwiseIntent(),
-        SingleActivator(LogicalKeyboardKey.delete):                                                   DeleteFileIntent(),
-        SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
-        SingleActivator(LogicalKeyboardKey.enter):                                                    SaveFileIntent(),
-        SingleActivator(LogicalKeyboardKey.escape):                                                   SetModeViewerIntent(),
-        SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
-        SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
-        SingleActivator(LogicalKeyboardKey.keyE, meta: Platform.isMacOS, control: !Platform.isMacOS): SwitchModeIntent(),
-        SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
-        SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
-        SingleActivator(LogicalKeyboardKey.f3):                                                       SwitchModeIntent(),
-      },
-      child: Actions(
-        actions: {
-          NextImageIntent:              CallbackAction(onInvoke: (_) => _nextImage()),
-          PreviousImageIntent:          CallbackAction(onInvoke: (_) => _previousImage()),
-          RotateClockwiseIntent:        CallbackAction(onInvoke: (_) => _rotateClockwise()),
-          RotateCounterclockwiseIntent: CallbackAction(onInvoke: (_) => _rotateCounterclockwise()),
-          DeleteFileIntent:             CallbackAction(onInvoke: (_) => _deleteFile()),
-          SaveFileIntent:               CallbackAction(onInvoke: (_) => _saveFile()),
-          RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context)),
-          SwitchModeIntent:             CallbackAction(onInvoke: (_) => _switchMode()),
-          SetModeViewerIntent:          CallbackAction(onInvoke: (_) => _setModeToViewer()),
-          CloseWindowIntent:            CallbackAction(onInvoke: (_) => exit(0)),
+    return PlatformMenuBar(
+      menus: [
+        PlatformMenu(label: "Hey-Hey", menus: [
+          PlatformMenuItemGroup(members: [
+            PlatformMenuItem(label: "Quit        ⌘W or ⌘Q",          onSelected: () => exit(0))
+          ])
+        ]),
+        PlatformMenu(label: "File", menus: [
+          PlatformMenuItemGroup(members: [
+            PlatformMenuItem(label: "Next              →",           onSelected: () => _nextImage()),
+            PlatformMenuItem(label: "Previous       ←",              onSelected: () => _previousImage())
+          ]),
+          PlatformMenuItemGroup(members: [
+            PlatformMenuItem(label: "Save              ↩",           onSelected: () => _saveFile()),
+            PlatformMenuItem(label: "Rename        ⌘R or F2 or ⇧F6", onSelected: () => _renameFile(context)),
+            PlatformMenuItem(label: "Delete           ⌫ or ⌦",       onSelected: () => _deleteFile())
+          ])
+        ]),
+        PlatformMenu(label: "Еdit", menus: [
+          PlatformMenuItemGroup(members: [
+            PlatformMenuItem(label: "Turn ⟳        ↑",              onSelected: () => _rotateClockwise()),
+            PlatformMenuItem(label: "Turn ⟲        ↓",              onSelected: () => _rotateCounterclockwise())
+          ]),
+          PlatformMenuItemGroup(members: [
+            PlatformMenuItem(label: "Crop            ⌘E or F3",      onSelected: () => _switchMode())
+          ])
+        ]),
+        PlatformMenu(label: "Help", menus: [
+          PlatformMenuItemGroup(members: [
+            PlatformMenuItem(label: "About        F1",               onSelected: () => _showAboutDialog())
+          ])
+        ]),
+      ],
+      child: Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
+        shortcuts: {
+          SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowUp):                                                  RotateClockwiseIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowDown):                                                RotateCounterclockwiseIntent(),
+          SingleActivator(LogicalKeyboardKey.delete):                                                   DeleteFileIntent(),
+          SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
+          SingleActivator(LogicalKeyboardKey.enter):                                                    SaveFileIntent(),
+          SingleActivator(LogicalKeyboardKey.escape):                                                   SetModeViewerIntent(),
+          SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
+          SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
+          SingleActivator(LogicalKeyboardKey.keyE, meta: Platform.isMacOS, control: !Platform.isMacOS): SwitchModeIntent(),
+          SingleActivator(LogicalKeyboardKey.f1):                                                       AboutDialogIntent(),
+          SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
+          SingleActivator(LogicalKeyboardKey.f3):                                                       SwitchModeIntent(),
+          SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
         },
-        child: Focus(              // needed for Shortcuts
-          autofocus: true,         // focused by default
-          child: RotatedBox(
-            quarterTurns: _rotate,
-            child: Builder(builder: (c) {
-              // 1) for Editor mode BoxFit must be "contain"
-              // 2) to access "rawImageData" in _saveFile() method, cacheRawData must be "true"
-              final result = _forceLoad.isNotEmpty
-                ? ExtendedImage.memory(key: extImgKey, _forceLoad,   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
-                : ExtendedImage.file  (key: extImgKey, _currentFile, mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
-              _forceLoad = Uint8List(0);
-              return result;
-            })
+        child: Actions(
+          actions: {
+            NextImageIntent:              CallbackAction(onInvoke: (_) => _nextImage()),
+            PreviousImageIntent:          CallbackAction(onInvoke: (_) => _previousImage()),
+            RotateClockwiseIntent:        CallbackAction(onInvoke: (_) => _rotateClockwise()),
+            RotateCounterclockwiseIntent: CallbackAction(onInvoke: (_) => _rotateCounterclockwise()),
+            DeleteFileIntent:             CallbackAction(onInvoke: (_) => _deleteFile()),
+            SaveFileIntent:               CallbackAction(onInvoke: (_) => _saveFile()),
+            RenameFileIntent:             CallbackAction(onInvoke: (_) => _renameFile(context)),
+            SwitchModeIntent:             CallbackAction(onInvoke: (_) => _switchMode()),
+            SetModeViewerIntent:          CallbackAction(onInvoke: (_) => _setModeToViewer()),
+            AboutDialogIntent:            CallbackAction(onInvoke: (_) => _showAboutDialog()),
+            CloseWindowIntent:            CallbackAction(onInvoke: (_) => exit(0)),
+          },
+          child: Focus(              // needed for Shortcuts
+            autofocus: true,         // focused by default
+            child: RotatedBox(
+              quarterTurns: _rotate,
+              child: Builder(builder: (c) {
+                // 1) for Editor mode BoxFit must be "contain"
+                // 2) to access "rawImageData" in _saveFile() method, cacheRawData must be "true"
+                final result = _forceLoad.isNotEmpty
+                  ? ExtendedImage.memory(key: extImgKey, _forceLoad,   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
+                  : ExtendedImage.file  (key: extImgKey, _currentFile, mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
+                _forceLoad = Uint8List(0);
+                return result;
+              })
+            )
           )
         )
       )
@@ -195,7 +232,7 @@ class _MyAppState extends State<MyApp> {
   void _renameFile(BuildContext context, {String? initialText}) async {
     if (_mode == ExtendedImageMode.gesture) {
       // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
-      // also, set "barrierDismissible" to 'true' to allow ESC button
+      // also, set "barrierDismissible" to "true" to allow ESC button
       final currentName = path.basenameWithoutExtension(_currentFile.path);
       final extension = path.extension(_currentFile.path);
       final title = Text('Rename file "$currentName" ($extension)?');
@@ -205,7 +242,7 @@ class _MyAppState extends State<MyApp> {
         final newPath = path.join(path.dirname(_currentFile.path), "$newName$extension");
         if (File(newPath).existsSync()) {
           const title = "Overwrite file?";
-          final text = "Filename '$newName' already exists. Overwrite?";
+          final text = 'Filename "$newName" already exists. Overwrite?';
           if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton)
             _renameFileImpl(newPath);
           else _renameFile(context, initialText: newName);
@@ -258,18 +295,24 @@ class _MyAppState extends State<MyApp> {
     } // else user pressed Enter for no reason
   }
 
+  void _showAboutDialog() async {
+    final info = await PackageInfo.fromPlatform();
+    final text = "v${info.version} (build: ${info.buildNumber})\n\n© Artem Mitrakov. All rights reserved\nmitrakov-artem@yandex.ru";
+    FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: IconStyle.information);
+  }
+
   String? _validateFilename(String? s) {
     // https://stackoverflow.com/a/31976060/2212849
     if (s == null || s.isEmpty) return "Filename cannot be empty";
     if (s.contains(Platform.pathSeparator)) return 'Filename cannot contain "${Platform.pathSeparator}"';
-    if (s.contains(RegExp(r'[\x00-\x1F]'))) return 'Filename cannot contain non-printable characters';
+    if (s.contains(RegExp(r'[\x00-\x1F]'))) return "Filename cannot contain non-printable characters";
     if (Platform.isWindows) {
       if (s.contains(RegExp(r'[<>:"/\\|?*]'))) return 'Filename cannot contain the following characters: <>:"/\\|?*';
       if (s.endsWith(" ")) return 'Filename cannot end with space (" ")';
       if (s.endsWith(".")) return 'Filename cannot end with dot (".")';
       if ({"CON", "PRN", "AUX", "NUL",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}.contains(s)) return 'Filename cannot be a reserved Windows word';
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}.contains(s)) return "Filename cannot be a reserved Windows word";
     }
     return null;
   }
@@ -286,3 +329,4 @@ class DeleteFileIntent extends Intent {}
 class CloseWindowIntent extends Intent {}
 class SwitchModeIntent extends Intent {}
 class SetModeViewerIntent extends Intent {}
+class AboutDialogIntent extends Intent {}
