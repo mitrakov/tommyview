@@ -13,7 +13,7 @@ dependencies:
   path: ^1.8.2                    # paths
   file_picker: ^5.2.5             # open-file dialog
   window_manager: ^0.3.0          # set title to window
-  image_editor: ^1.3.0            # image editor; don't use "image: ^4.0.11" (it contains a lot of bugs)
+  image_editor: ^1.3.0            # image editor, requires MacOS 10.15+; don't use "image: ^4.0.11" (it contains a lot of bugs)
   flutter_platform_alert: ^0.3.0  # platform dialogs
   extended_image: ^7.0.0          # image viewer
   package_info_plus: ^3.0.2       # get version, build and app name
