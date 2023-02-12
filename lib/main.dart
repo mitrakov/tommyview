@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:package_info_plus/package_info_plus.dart";
 import "package:path/path.dart" as path;
+import "package:image/image.dart" as img;
 import "package:image_editor/image_editor.dart";
 import "package:file_picker/file_picker.dart";
 import "package:extended_image/extended_image.dart";
@@ -264,12 +265,35 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void _saveFile() async {
-    final option = ImageEditorOption(); // AddTextOption, ClipOption, ColorOption, DrawOption, FlipOption, MaxImageOption, RotateOption, ScaleOption
+  void _saveFile() {
+    // converter that uses "image" library (buggy, not recommended, cross-platform)
+    converterWinLinux(Uint8List image, int? rotate, Rect? cropRect) {
+      final image0 = img.decodeImage(image)!;                                         // use v4.0.11+ (https://github.com/brendan-duncan/image/issues/460)
+      final image1 = rotate == null ? image0 : img.copyRotate(image0, angle: rotate); // use v4.0.12+ (https://github.com/brendan-duncan/image/issues/462)
+      final image2 = cropRect == null ? image1 : img.copyCrop(image1, x: cropRect.left.toInt(), y: cropRect.top.toInt(), width: cropRect.width.toInt(), height: cropRect.height.toInt());
+      return Future.value(img.encodeNamedImage(_currentFile.path, image2)!);
+    }
+    // converter that uses "image_editor" library (recommended, not supported for Windows/Linux)
+    converterMacOs(Uint8List image, int? rotate, Rect? cropRect) async {
+      final option = ImageEditorOption(); // AddTextOption, ClipOption, ColorOption, DrawOption, FlipOption, MaxImageOption, RotateOption, ScaleOption
+      if (rotate != null) option.addOption(RotateOption(rotate));
+      if (cropRect != null) option.addOption(ClipOption(x: cropRect.left, y: cropRect.top, width: cropRect.width, height: cropRect.height));
+      final result = await ImageEditor.editImage(image: image, imageEditorOption: option);
+      return result!;
+    }
+
+    if (Platform.isWindows || Platform.isLinux) _saveFileInternal(converterWinLinux);
+    else _saveFileInternal(converterMacOs);
+  }
+
+  void _saveFileInternal(ImageConverter converter) async {
+    int? rotateOption;
+    Rect? cropOption;
+
     switch (_mode) {
       case ExtendedImageMode.gesture:
         if (isRotated) {
-          option.addOption(RotateOption(_rotate * 90));
+          rotateOption = _rotate * 90;
         }
         break;
       case ExtendedImageMode.editor:
@@ -277,16 +301,18 @@ class _MyAppState extends State<MyApp> {
         final action = state.editAction!;
         final cropRect = state.getCropRect()!;
         if (action.needCrop) {
-          option.addOption(ClipOption(x: cropRect.left, y: cropRect.top, width: cropRect.width, height: cropRect.height));
+          cropOption = cropRect;
         }
         break;
       default:
     }
-    if (option.options.isNotEmpty) {
+
+    if (rotateOption != null || cropOption != null) {
       final widget = extImgKey.currentWidget as ExtendedImage;         // editorKey cannot be used here!
       final imageProvider = widget.image as ExtendedFileImageProvider; // now it's always ExtendedFileImageProvider, but theoretically might be ExtendedMemoryImageProvider
-      final bytes = await ImageEditor.editImage(image: imageProvider.rawImageData, imageEditorOption: option);
-      _currentFile.writeAsBytesSync(bytes!, flush: true);
+      final Uint8List image = imageProvider.rawImageData;
+      final Uint8List bytes = await converter.call(image, rotateOption, cropOption);
+      _currentFile.writeAsBytesSync(bytes, flush: true);
       clearMemoryImageCache(); // clear image cache
       setState(() {
         _forceLoad = bytes;    // force reload current image from disk
@@ -317,6 +343,9 @@ class _MyAppState extends State<MyApp> {
     return null;
   }
 }
+
+// Typedefs
+typedef ImageConverter = Future<Uint8List> Function(Uint8List curImage, int? rotate, Rect? cropRect);
 
 // Hotkey intents
 class NextImageIntent extends Intent {}
