@@ -10,6 +10,7 @@ import "package:file_picker/file_picker.dart";
 import "package:extended_image/extended_image.dart";
 import "package:window_manager/window_manager.dart";
 import "package:flutter_platform_alert/flutter_platform_alert.dart";
+import "package:menubar/menubar.dart";
 import "package:tommyview/prompt.dart";
 
 void main(List<String> args) async {
@@ -65,6 +66,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _currentFile = widget.files.firstWhere((f) => f.path == widget.startPath, orElse: () => widget.files.first);
     _index = widget.files.indexOf(_currentFile);
+    if (!Platform.isMacOS) _createNativeMenu(); // tmp solution to create menu on Windows/Linux
   }
 
   @override
@@ -101,7 +103,7 @@ class _MyAppState extends State<MyApp> {
           PlatformMenuItemGroup(members: [
             PlatformMenuItem(label: "About        F1",               onSelected: () => _showAboutDialog())
           ])
-        ]),
+        ])
       ],
       child: Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
         shortcuts: {
@@ -332,7 +334,7 @@ class _MyAppState extends State<MyApp> {
     if (s == null || s.isEmpty) return "Filename cannot be empty";
     if (s.contains(Platform.pathSeparator)) return 'Filename cannot contain "${Platform.pathSeparator}"';
     if (s.contains(RegExp(r'[\x00-\x1F]'))) return "Filename cannot contain non-printable characters";
-    if (Platform.isWindows) {
+    if (Platform.isWindows) { // Windows has more strict rules for filenames
       if (s.contains(RegExp(r'[<>:"/\\|?*]'))) return 'Filename cannot contain the following characters: <>:"/\\|?*';
       if (s.endsWith(" ")) return 'Filename cannot end with space (" ")';
       if (s.endsWith(".")) return 'Filename cannot end with dot (".")';
@@ -341,6 +343,32 @@ class _MyAppState extends State<MyApp> {
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}.contains(s)) return "Filename cannot be a reserved Windows word";
     }
     return null;
+  }
+
+  void _createNativeMenu() {
+    // This is a temp solution, until Flutter adds "PlatformMenuBar" support for Windows/Linux.
+    // After that "menubar" dependency may also be removed
+    setApplicationMenu([
+      NativeSubmenu(label: "File", children: [
+        NativeMenuItem(label: "Next              →",                    onSelected: () => _nextImage()),
+        NativeMenuItem(label: "Previous       ←",                       onSelected: () => _previousImage()),
+        const NativeMenuDivider(),
+        NativeMenuItem(label: "Save              Enter",                onSelected: () => _saveFile()),
+        NativeMenuItem(label: "Rename        CTRL+R or F2 or SHIFT+F6", onSelected: () => _renameFile(context)),
+        NativeMenuItem(label: "Delete           DEL or Backspace",      onSelected: () => _deleteFile()),
+        const NativeMenuDivider(),
+        NativeMenuItem(label: "Quit        CTRL+W or ALT+F4",           onSelected: () => exit(0))
+      ]),
+      NativeSubmenu(label: "Еdit", children: [
+        NativeMenuItem(label: "Turn ⟳        ↑",                       onSelected: () => _rotateClockwise()),
+        NativeMenuItem(label: "Turn ⟲        ↓",                       onSelected: () => _rotateCounterclockwise()),
+        const NativeMenuDivider(),
+        NativeMenuItem(label: "Crop            CTRL+E or F3",           onSelected: () => _switchMode())
+      ]),
+      NativeSubmenu(label: "Help", children: [
+        NativeMenuItem(label: "About        F1",                        onSelected: () => _showAboutDialog())
+      ])
+    ]);
   }
 }
 

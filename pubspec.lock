@@ -203,6 +203,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
+  menubar:
+    dependency: "direct main"
+    description:
+      path: "plugins/menubar"
+      ref: master
+      resolved-ref: "12decbe0f592e14e03223f6f2c0c7e0e2dbd70a1"
+      url: "https://github.com/google/flutter-desktop-embedding.git"
+    source: git
+    version: "0.2.0"
   meta:
     dependency: transitive
     description:
