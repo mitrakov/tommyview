@@ -53,13 +53,15 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final editorKey = GlobalKey<ExtendedImageEditorState>();
-  final extImgKey = GlobalKey(); // key to access ExtendedImage widget
+  final extImgKey = GlobalKey();         // key to access ExtendedImage widget
   late File _currentFile;
   late int _index;
   ExtendedImageMode _mode = ExtendedImageMode.gesture;
-  int _rotate = 0;                     // in quarters (0=0°, 1=90°, 2=180°, etc.)
-  Uint8List _forceLoad = Uint8List(0); // force load flag used in _saveFile() to reload the image
-  bool get isRotated => _rotate % 4 > 0;
+  int _rotate = 0;                       // in quarters (0=0°, 1=90°, 2=180°, etc.)
+  Uint8List _forceLoad = Uint8List(0);   // force load flag used in _saveFile() to reload the image
+
+  bool get isRotated => _rotate % 4 > 0; // result of "%" is always non-negative
+  bool get isWebp => path.extension(_currentFile.path).toLowerCase() == ".webp";
 
   @override
   void initState() {
@@ -163,7 +165,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _switchMode() {
-    setState(() {
+    if (isWebp) _showWebpNotSupportedDialog();
+    else setState(() {
       _mode = _mode == ExtendedImageMode.editor ? ExtendedImageMode.gesture : ExtendedImageMode.editor;
       _rotate = 0;
     });
@@ -202,7 +205,8 @@ class _MyAppState extends State<MyApp> {
 
   void _rotateClockwise() {
     if (_mode == ExtendedImageMode.gesture) {
-      setState(() {
+      if (isWebp) _showWebpNotSupportedDialog();
+      else setState(() {
         _rotate++;
       });
     }
@@ -210,7 +214,8 @@ class _MyAppState extends State<MyApp> {
 
   void _rotateCounterclockwise() {
     if (_mode == ExtendedImageMode.gesture) {
-      setState(() {
+      if (isWebp) _showWebpNotSupportedDialog();
+      else setState(() {
         _rotate--;
       });
     }
@@ -323,6 +328,11 @@ class _MyAppState extends State<MyApp> {
     } // else user pressed Enter for no reason
   }
 
+  void _showWebpNotSupportedDialog() {
+    const text = "Sorry, WebP format is not currently supported for editing";
+    FlutterPlatformAlert.showAlert(windowTitle: "Unsupported format", text: text, iconStyle: IconStyle.warning);
+  }
+
   void _showAboutDialog() async {
     final info = await PackageInfo.fromPlatform();
     final text = "v${info.version} (build: ${info.buildNumber})\n\n© Artem Mitrakov. All rights reserved\nmitrakov-artem@yandex.ru";
@@ -357,7 +367,7 @@ class _MyAppState extends State<MyApp> {
         NativeMenuItem(label: "Rename        Ctrl+R or F2 or Shift+F6", onSelected: () => _renameFile(context)),
         NativeMenuItem(label: "Delete           Del or Backspace",      onSelected: () => _deleteFile()),
         const NativeMenuDivider(),
-        NativeMenuItem(label: "Quit              Ctrl+W or Alt+F4",           onSelected: () => exit(0))
+        NativeMenuItem(label: "Quit              Ctrl+W or Alt+F4",     onSelected: () => exit(0))
       ]),
       NativeSubmenu(label: "Еdit", children: [
         NativeMenuItem(label: "Turn ⟳        ↑",                       onSelected: () => _rotateClockwise()),
