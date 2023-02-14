@@ -354,16 +354,16 @@ class _MyAppState extends State<MyApp> {
         NativeMenuItem(label: "Previous       ←",                       onSelected: () => _previousImage()),
         const NativeMenuDivider(),
         NativeMenuItem(label: "Save              Enter",                onSelected: () => _saveFile()),
-        NativeMenuItem(label: "Rename        CTRL+R or F2 or SHIFT+F6", onSelected: () => _renameFile(context)),
-        NativeMenuItem(label: "Delete           DEL or Backspace",      onSelected: () => _deleteFile()),
+        NativeMenuItem(label: "Rename        Ctrl+R or F2 or Shift+F6", onSelected: () => _renameFile(context)),
+        NativeMenuItem(label: "Delete           Del or Backspace",      onSelected: () => _deleteFile()),
         const NativeMenuDivider(),
-        NativeMenuItem(label: "Quit        CTRL+W or ALT+F4",           onSelected: () => exit(0))
+        NativeMenuItem(label: "Quit              Ctrl+W or Alt+F4",           onSelected: () => exit(0))
       ]),
       NativeSubmenu(label: "Еdit", children: [
         NativeMenuItem(label: "Turn ⟳        ↑",                       onSelected: () => _rotateClockwise()),
         NativeMenuItem(label: "Turn ⟲        ↓",                       onSelected: () => _rotateCounterclockwise()),
         const NativeMenuDivider(),
-        NativeMenuItem(label: "Crop            CTRL+E or F3",           onSelected: () => _switchMode())
+        NativeMenuItem(label: "Crop            Ctrl+E or F3",           onSelected: () => _switchMode())
       ]),
       NativeSubmenu(label: "Help", children: [
         NativeMenuItem(label: "About        F1",                        onSelected: () => _showAboutDialog())
