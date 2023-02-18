@@ -40,22 +40,22 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>Скорее дайте доступ к Desktop folder!</string>
+	<string>Please give the access to Desktop folder!</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>Скорее дайте доступ к Documents folder!</string>
+	<string>Please give the access to Documents folder!</string>
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>Скорее дайте доступ к Downloads folder!</string>
+	<string>Please give the access to Downloads folder!</string>
 	<key>NSFileProviderDomainUsageDescription</key>
-	<string>Скорее дайте доступ к File Provider domain!</string>
+	<string>Please give the access to File Provider domain!</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSNetworkVolumesUsageDescription</key>
-	<string>Скорее дайте доступ к Network volumes!</string>
+	<string>Please give the access to Network volumes!</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSRemovableVolumesUsageDescription</key>
-	<string>Скорее дайте доступ к Removable volumes!</string>
+	<string>Please give the access to Removable volumes!</string>
 </dict>
 </plist>
