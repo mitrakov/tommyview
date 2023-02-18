@@ -1,16 +1,37 @@
-# tommyview
+# TommyView
 
-A new Flutter project.
+Simple lightweight free open source cross-platform images viewer and editor for MacOS and Windows.
 
-## Getting Started
+![](tommyview.gif)
 
-This project is a starting point for a Flutter application.
+## Install
+- Go to [Releases](https://github.com/mitrakov/tommyview/releases) and download the latest version for MacOS or Windows.
+- Unpack the *.zip file.
+- Set `TommyView` as a default app for images:
+  - **MacOS**: in Finder, right-click on an image, tap "Get Info", in "Open with" section choose `TommyView` app and click "Change All..."
+  - **Windows**: in File Explorer, right-click on an image, choose "Open with > Choose another app", hit "More apps", tap "Look for another app on this PC", choose `TommyView` app, and select "Always use this app to open image files". 
 
-A few resources to get you started if this is your first Flutter project:
+## Shortcuts
+| Function      | MacOS                 | Windows                        |
+|---------------|-----------------------|--------------------------------|
+| Next file     | `→`                   | `→`                            |
+| Previous file | `←`                   | `←`                            |
+| Rotate ⟳      | `↑`                   | `↑`                            |
+| Rotate ⟲      | `↓`                   | `↓`                            |
+| Crop image    | `⌘E` or `F3`          | `Ctrl+E` or `F3`               |
+| Save File     | `↩`                   | `Enter`                        |
+| Delete File   | `⌫` or `⌦`            | `Del` or `Backspace`           |
+| Rename File   | `⌘R` or `F2` or `⇧F6` | `Ctrl+R` or `F2` or `Shift+F6` |
+| About         | `F1`                  | `F1`                           |
+| Quit          | `⌘W` or `⌘Q`          | `Ctrl+W` or `Alt+F4`           |
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Issues
+For issues, bugs and feature requests use this [GitHub page](https://github.com/mitrakov/tommyview/issues).
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## License
+Published under MIT License.
+
+2023 © Artem Mitrakov. All rights reserved.
+
+## Contribution
+If you want to help with code contribution or language translations please [let us know](mailto:mitrakov-artem@yandex.ru).
