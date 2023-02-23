@@ -29,7 +29,7 @@ Future<String> getStartFile(List<String> args) async {
     final String? currentFile = await hostApi.invokeMethod("getCurrentFile");
     if (currentFile != null) return currentFile;
   }
-  FilePickerResult? result = await FilePicker.platform.pickFiles();
+  FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.image);
   return result?.files.first.path ?? "";
 }
 
@@ -40,10 +40,10 @@ class MyApp extends StatefulWidget {
   MyApp(this.startPath, {Key? key}) : super(key: key) {
     final allowedExtensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".wbmp"}; // should match the ones in Info.plist!
     files = Directory(path.dirname(startPath))
-        .listSync()                                                                      // get all folder children
-        .whereType<File>()                                                               // filter out directories
-        .where((f) => allowedExtensions.contains(path.extension(f.path).toLowerCase()))  // filter by extension
-        .toList();
+      .listSync()                                                                          // get all folder children
+      .whereType<File>()                                                                   // filter out directories
+      .where((f) => allowedExtensions.contains(path.extension(f.path).toLowerCase()))      // filter by extension
+      .toList();
     files.sort((a, b) => a.path.compareTo(b.path));
   }
 
