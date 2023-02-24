@@ -5,11 +5,17 @@ Simple lightweight free open source cross-platform images viewer and editor for 
 ![](tommyview.gif)
 
 ## Install
-- Go to [Releases](https://github.com/mitrakov/tommyview/releases) and download the latest version for MacOS or Windows.
-- Unpack the *.zip file.
+### Windows
+- Go to [Releases](https://github.com/mitrakov/tommyview/releases) and download the latest version for Windows.
+- Run the Installer and follow the steps.
 - Set `TommyView` as a default app for images:
-  - **MacOS**: in Finder, right-click on an image, tap "Get Info", in "Open with" section choose `TommyView` app and click "Change All..."
-  - **Windows**: in File Explorer, right-click on an image, choose "Open with > Choose another app", hit "More apps", tap "Look for another app on this PC", choose `TommyView` app, and select "Always use this app to open image files". 
+  - in File Explorer, right-click on an image, tap "Open with > Choose another app", then choose `TommyView` app, and select "Always use this app to open image files". 
+
+### MacOS
+- Go to [Releases](https://github.com/mitrakov/tommyview/releases) and download the latest version for MacOS.
+- Unpack the *.zip file to `/Applications` folder.
+- Set `TommyView` as a default app for images:
+  - in Finder, right-click on an image, tap "Get Info", in "Open with" section choose `TommyView` app, and click "Change All...".
 
 ## Shortcuts
 | Function      | MacOS                 | Windows                        |
