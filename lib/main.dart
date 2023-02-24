@@ -13,6 +13,7 @@ import "package:flutter_platform_alert/flutter_platform_alert.dart";
 import "package:menubar/menubar.dart";
 import "package:tommyview/prompt.dart";
 
+// Bugs and feature requests: win32
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
