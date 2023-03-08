@@ -30,7 +30,7 @@ Future<String> getStartFile(List<String> args) async {
     final String? currentFile = await hostApi.invokeMethod("getCurrentFile");
     if (currentFile != null) return currentFile;
   }
-  FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.image);
+  FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.image); // TODO image
   return result?.files.first.path ?? "";
 }
 
@@ -262,8 +262,7 @@ class _MyAppState extends State<MyApp> {
     // the working directory is the same as the file location, which is not always the case.
     // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
     final newFile = _currentFile.renameSync(newPath);
-    widget.files.removeAt(_index);
-    widget.files.insert(_index, newFile);
+    widget.files..removeAt(_index)..insert(_index, newFile);
     setState(() {
       _currentFile = widget.files[_index];
     });
