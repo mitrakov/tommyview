@@ -13,7 +13,7 @@ import "package:flutter_platform_alert/flutter_platform_alert.dart";
 import "package:menubar/menubar.dart";
 import "package:tommyview/prompt.dart";
 
-// Bugs and feature requests: win32
+// Bugs and feature requests: win32, check AVIF format
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
@@ -44,8 +44,8 @@ class MyApp extends StatefulWidget {
       .listSync()                                                                          // get all folder children
       .whereType<File>()                                                                   // filter out directories
       .where((f) => allowedExtensions.contains(path.extension(f.path).toLowerCase()))      // filter by extension
-      .toList();
-    files.sort((a, b) => a.path.compareTo(b.path));
+      .toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
   }
 
   @override
@@ -78,34 +78,30 @@ class _MyAppState extends State<MyApp> {
     return PlatformMenuBar(
       menus: [
         PlatformMenu(label: "Hey-Hey", menus: [
-          PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Quit        ⌘W or ⌘Q",          onSelected: () => exit(0))
-          ])
+          PlatformMenuItem(label: "Quit        ⌘W or ⌘Q",            onSelected: () => exit(0))
         ]),
         PlatformMenu(label: "File", menus: [
           PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Next              →",           onSelected: () => _nextImage()),
-            PlatformMenuItem(label: "Previous       ←",              onSelected: () => _previousImage())
+            PlatformMenuItem(label: "Next              →",           onSelected: _nextImage),
+            PlatformMenuItem(label: "Previous       ←",              onSelected: _previousImage)
           ]),
           PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Save              ↩",           onSelected: () => _saveFile()),
+            PlatformMenuItem(label: "Save              ↩",           onSelected: _saveFile),
             PlatformMenuItem(label: "Rename        ⌘R or F2 or ⇧F6", onSelected: () => _renameFile(context)),
-            PlatformMenuItem(label: "Delete           ⌫ or ⌦",       onSelected: () => _deleteFile())
+            PlatformMenuItem(label: "Delete           ⌫ or ⌦",       onSelected: _deleteFile)
           ])
         ]),
         PlatformMenu(label: "Еdit", menus: [
           PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Turn ⟳        ↑",              onSelected: () => _rotateClockwise()),
-            PlatformMenuItem(label: "Turn ⟲        ↓",              onSelected: () => _rotateCounterclockwise())
+            PlatformMenuItem(label: "Turn ⟳        ↑",              onSelected: _rotateClockwise),
+            PlatformMenuItem(label: "Turn ⟲        ↓",              onSelected: _rotateCounterclockwise)
           ]),
           PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Crop            ⌘E or F3",      onSelected: () => _switchMode())
+            PlatformMenuItem(label: "Crop            ⌘E or F3",      onSelected: _switchMode)
           ])
         ]),
         PlatformMenu(label: "Help", menus: [
-          PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "About        F1",               onSelected: () => _showAboutDialog())
-          ])
+          PlatformMenuItem(label: "About        F1",                 onSelected: _showAboutDialog)
         ])
       ],
       child: Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
@@ -361,23 +357,23 @@ class _MyAppState extends State<MyApp> {
     // After that "menubar" dependency may also be removed
     setApplicationMenu([
       NativeSubmenu(label: "File", children: [
-        NativeMenuItem(label: "Next              →",                    onSelected: () => _nextImage()),
-        NativeMenuItem(label: "Previous       ←",                       onSelected: () => _previousImage()),
+        NativeMenuItem(label: "Next              →",                    onSelected: _nextImage),
+        NativeMenuItem(label: "Previous       ←",                       onSelected: _previousImage),
         const NativeMenuDivider(),
-        NativeMenuItem(label: "Save              Enter",                onSelected: () => _saveFile()),
+        NativeMenuItem(label: "Save              Enter",                onSelected: _saveFile),
         NativeMenuItem(label: "Rename        Ctrl+R or F2 or Shift+F6", onSelected: () => _renameFile(context)),
-        NativeMenuItem(label: "Delete           Del or Backspace",      onSelected: () => _deleteFile()),
+        NativeMenuItem(label: "Delete           Del or Backspace",      onSelected: _deleteFile),
         const NativeMenuDivider(),
         NativeMenuItem(label: "Quit              Ctrl+W or Alt+F4",     onSelected: () => exit(0))
       ]),
       NativeSubmenu(label: "Еdit", children: [
-        NativeMenuItem(label: "Turn ⟳        ↑",                       onSelected: () => _rotateClockwise()),
-        NativeMenuItem(label: "Turn ⟲        ↓",                       onSelected: () => _rotateCounterclockwise()),
+        NativeMenuItem(label: "Turn ⟳        ↑",                       onSelected: _rotateClockwise),
+        NativeMenuItem(label: "Turn ⟲        ↓",                       onSelected: _rotateCounterclockwise),
         const NativeMenuDivider(),
-        NativeMenuItem(label: "Crop            Ctrl+E or F3",           onSelected: () => _switchMode())
+        NativeMenuItem(label: "Crop            Ctrl+E or F3",           onSelected: _switchMode)
       ]),
       NativeSubmenu(label: "Help", children: [
-        NativeMenuItem(label: "About        F1",                        onSelected: () => _showAboutDialog())
+        NativeMenuItem(label: "About        F1",                        onSelected: _showAboutDialog)
       ])
     ]);
   }
