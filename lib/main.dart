@@ -13,7 +13,7 @@ import "package:flutter_platform_alert/flutter_platform_alert.dart";
 import "package:menubar/menubar.dart";
 import "package:tommyview/prompt.dart";
 
-// Bugs and feature requests: win32, check AVIF format
+// Bugs and feature requests: win32, check AVIF format, CMD+Q doesn't work
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
@@ -30,7 +30,7 @@ Future<String> getStartFile(List<String> args) async {
     final String? currentFile = await hostApi.invokeMethod("getCurrentFile");
     if (currentFile != null) return currentFile;
   }
-  FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.image); // TODO image
+  FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.image); // TODO image: return '"bmp", "gif", "jpeg", "jpg", "png"';
   return result?.files.first.path ?? "";
 }
 

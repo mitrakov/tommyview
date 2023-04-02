@@ -1,0 +1,56 @@
+ESC
+Сохранить как
+Make a default app
+
+
+=======
+if (n.endsWith('.jpg') || n.endsWith('.jpeg')) {
+    return JpegEncoder();
+  }
+  if (n.endsWith('.png')) {
+    return PngEncoder();
+  }
+  if (n.endsWith('.tga')) {
+    return TgaEncoder();
+  }
+  if (n.endsWith('.gif')) {
+    return GifEncoder();
+  }
+  if (n.endsWith('.tif') || n.endsWith('.tiff')) {
+    return TiffEncoder();
+  }
+  if (n.endsWith('.bmp')) {
+    return BmpEncoder();
+  }
+  if (n.endsWith('.ico')) {
+    return IcoEncoder();
+  }
+  if (n.endsWith('.cur')) {
+    return IcoEncoder();
+  }
+  if (n.endsWith('.pvr')) {
+    return PvrEncoder();
+  }
+  import 'bmp_decoder.dart';
+import 'bmp_encoder.dart';
+import 'cur_encoder.dart';
+import 'decoder.dart';
+import 'encoder.dart';
+import 'exr_decoder.dart';
+import 'gif_decoder.dart';
+import 'gif_encoder.dart';
+import 'ico_decoder.dart';
+import 'ico_encoder.dart';
+import 'jpeg/jpeg_util.dart';
+import 'jpeg_decoder.dart';
+import 'jpeg_encoder.dart';
+import 'png_decoder.dart';
+import 'png_encoder.dart';
+import 'psd_decoder.dart';
+import 'pvr_decoder.dart';
+import 'pvr_encoder.dart';
+import 'tga_decoder.dart';
+import 'tga_encoder.dart';
+import 'tiff_decoder.dart';
+import 'tiff_encoder.dart';
+import 'webp_decoder.dart';
