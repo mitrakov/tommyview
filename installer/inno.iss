@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "TommyView"
-#define MyAppVersion "23.2.18"
+#define MyAppVersion "23.5.17"
 #define MyAppPublisher "Artem Mitrakov"
 #define MyAppURL "https://github.com/mitrakov/tommyview"
 #define MyAppExeName "TommyView.exe"
@@ -67,7 +67,6 @@ Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-;Source: "C:\Users\Tommy\installer\TommyView\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Tommy\tommyview\build\windows\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Tommy\tommyview\installer\vcruntime140_1.dll";   DestDir: "{app}"; Flags: ignoreversion
 
