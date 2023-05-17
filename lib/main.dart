@@ -13,7 +13,7 @@ import "package:flutter_platform_alert/flutter_platform_alert.dart";
 import "package:menubar/menubar.dart";
 import "package:tommyview/prompt.dart";
 
-// Bugs and feature requests: win32, check AVIF format, CMD+Q doesn't work
+// Bugs and feature requests: win32, check AVIF format
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
@@ -114,6 +114,7 @@ class _MyAppState extends State<MyApp> {
           SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
           SingleActivator(LogicalKeyboardKey.enter):                                                    SaveFileIntent(),
           SingleActivator(LogicalKeyboardKey.escape):                                                   SetModeViewerIntent(),
+          SingleActivator(LogicalKeyboardKey.keyQ, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(), // since MacOS 11 "Cmd+Q" doesn't work automatically
           SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
           SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
           SingleActivator(LogicalKeyboardKey.keyE, meta: Platform.isMacOS, control: !Platform.isMacOS): SwitchModeIntent(),
@@ -304,7 +305,7 @@ class _MyAppState extends State<MyApp> {
         final action = state.editAction!;
         final cropRect = state.getCropRect()!;
         if (action.needCrop) {
-          cropOption = cropRect;
+          cropOption = _fixRect(cropRect);
         }
         break;
       default:
@@ -375,6 +376,18 @@ class _MyAppState extends State<MyApp> {
         NativeMenuItem(label: "About        F1",                        onSelected: _showAboutDialog)
       ])
     ]);
+  }
+
+  Rect _fixRect(Rect rect) {
+    // extended_image: 7.0.2 has a bug when sometimes it provides "-0.0" values in Rect
+    if (rect.left.isNegative || rect.right.isNegative || rect.top.isNegative || rect.bottom.isNegative) {
+      final left   = rect.left.isNegative   ? 0.0 : rect.left;
+      final right  = rect.right.isNegative  ? 0.0 : rect.right;
+      final top    = rect.top.isNegative    ? 0.0 : rect.top;
+      final bottom = rect.bottom.isNegative ? 0.0 : rect.bottom;
+      return Rect.fromLTRB(left, top, right, bottom);
+    }
+    return rect;
   }
 }
 
