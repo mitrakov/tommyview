@@ -16,6 +16,10 @@
 				<string>webp</string>
 				<string>bmp</string>
 				<string>wbmp</string>
+				<string>heic</string>
+				<string>ico</string>
+				<string>cur</string>
+				<string>avif</string>
 			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
