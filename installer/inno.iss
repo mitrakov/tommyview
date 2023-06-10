@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "TommyView"
-#define MyAppVersion "23.5.17"
+#define MyAppVersion "23.6.10"
 #define MyAppPublisher "Artem Mitrakov"
 #define MyAppURL "https://github.com/mitrakov/tommyview"
 #define MyAppExeName "TommyView.exe"
