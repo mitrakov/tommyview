@@ -24,6 +24,8 @@ Simple lightweight free open source cross-platform images viewer and editor for 
 | Previous file | `←`                   | `←`                            |
 | Rotate ⟳      | `↑`                   | `↑`                            |
 | Rotate ⟲      | `↓`                   | `↓`                            |
+| Bulk Rotate ⟳ | `⇧↑`                  | `Shift+↑`                      |
+| Bulk Rotate ⟲ | `⇧↓`                  | `Shift+↓`                      |
 | Crop image    | `⌘E` or `F3`          | `Ctrl+E` or `F3`               |
 | Save File     | `↩`                   | `Enter`                        |
 | Delete File   | `⌫` or `⌦`            | `Del` or `Backspace`           |
