@@ -44,7 +44,7 @@ class MyApp extends StatefulWidget {
     files = Directory(path.dirname(startPath))
       .listSync()                                                                                        // get all folder children
       .whereType<File>()                                                                                 // filter out directories
-      .where((f) => _allowedExtensions.contains(path.extension(f.path).toLowerCase().substring(1)))      // filter by extension; substring() removes "."
+      .where((f) => _allowedExtensions.map((s) => ".$s").contains(path.extension(f.path).toLowerCase())) // filter by extension
       .toList()
       ..sort((a, b) => a.path.compareTo(b.path));
   }
