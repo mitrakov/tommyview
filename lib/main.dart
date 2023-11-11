@@ -362,6 +362,7 @@ class _MyAppState extends State<MyApp> {
   /// -: sometimes cuts off EXIF data: "Corrupt data. The data provided does not follow the specification. ExifData: Tag data past end of buffer (1823 > 1915)" (v4.1.3)
   /// -: bug: https://github.com/brendan-duncan/image/issues/460
   /// -: bug: https://github.com/brendan-duncan/image/issues/462
+  /// -: bug: https://github.com/brendan-duncan/image/issues/587
   /// -: no Webp support
   Future<Uint8List> _converterWinLinux(Uint8List image, String path, int? rotate, Rect? cropRect) {
     final image0 = img.decodeImage(image)!;                                         // use v4.0.11+ (https://github.com/brendan-duncan/image/issues/460)
