@@ -64,6 +64,7 @@ class _MyAppState extends State<MyApp> {
 
   bool get isRotated => _rotate % 4 > 0; // result of "%" is always non-negative
   bool get isWebp => path.extension(_currentFile.path).toLowerCase() == ".webp";
+  bool get isPng  => path.extension(_currentFile.path).toLowerCase() == ".png";
 
   @override
   void initState() {
@@ -356,7 +357,12 @@ class _MyAppState extends State<MyApp> {
     FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: IconStyle.information);
   }
 
-  /// converter that uses "image" library (buggy, not recommended, but cross-platform)
+  /// converter that uses "image" library
+  /// +: cross-platform: Windows, Linux, MacOS
+  /// -: sometimes cuts off EXIF data: "Corrupt data. The data provided does not follow the specification. ExifData: Tag data past end of buffer (1823 > 1915)" (v4.1.3)
+  /// -: bug: https://github.com/brendan-duncan/image/issues/460
+  /// -: bug: https://github.com/brendan-duncan/image/issues/462
+  /// -: no Webp support
   Future<Uint8List> _converterWinLinux(Uint8List image, String path, int? rotate, Rect? cropRect) {
     final image0 = img.decodeImage(image)!;                                         // use v4.0.11+ (https://github.com/brendan-duncan/image/issues/460)
     final image1 = rotate == null ? image0 : img.copyRotate(image0, angle: rotate); // use v4.0.12+ (https://github.com/brendan-duncan/image/issues/462)
@@ -364,11 +370,15 @@ class _MyAppState extends State<MyApp> {
     return Future.value(img.encodeNamedImage(path, image2)!);
   }
 
-  /// converter that uses "image_editor" library (recommended, more stable, but not supported for Windows/Linux);
+  /// converter that uses "image_editor" library
+  /// +: keeps EXIF data for JPG (partially, only 8 items), not for PNG
+  /// -: only MacOS 10.15+
+  /// -: no Webp support
   Future<Uint8List> _converterMacOs(Uint8List image, String path, int? rotate, Rect? cropRect) async {
     final option = ImageEditorOption(); // AddTextOption, ClipOption, ColorOption, DrawOption, FlipOption, MaxImageOption, RotateOption, ScaleOption
     if (rotate != null) option.addOption(RotateOption(rotate));
     if (cropRect != null) option.addOption(ClipOption(x: cropRect.left, y: cropRect.top, width: cropRect.width, height: cropRect.height));
+    option.outputFormat = isPng ? OutputFormat.png(100) : OutputFormat.jpeg(100); // this is needed! Default quality for PNG is awful
     final result = await ImageEditor.editImage(image: image, imageEditorOption: option);
     return result!;
   }
