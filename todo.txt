@@ -1,3 +1,4 @@
+Fullscreen for Windows
 ESC
 Сохранить как
 Make a default app
