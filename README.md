@@ -30,6 +30,7 @@ Simple lightweight free open source cross-platform images viewer and editor for 
 | Save File     | `↩`                   | `Enter`                        |
 | Delete File   | `⌫` or `⌦`            | `Del` or `Backspace`           |
 | Rename File   | `⌘R` or `F2` or `⇧F6` | `Ctrl+R` or `F2` or `Shift+F6` |
+| Settings      | `⌘,` or `F4`          | `CTRL+,` or `F4`               |
 | About         | `F1`                  | `F1`                           |
 | Quit          | `⌘W` or `⌘Q`          | `Ctrl+W` or `Alt+F4`           |
 
