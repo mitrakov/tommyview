@@ -36,10 +36,8 @@ Future<String> getStartFile(List<String> args) async {
     // in MacOS, we need to make a call to Swift native code to check if a file has been opened with our App
     const hostApi = MethodChannel("mitrakov");
     final String? currentFile = await hostApi.invokeMethod("getCurrentFile");
-    if (currentFile != null) {
-      FLog.info(text: "Filename from MacOS channel: $currentFile");
-      return currentFile;
-    }
+    FLog.info(text: "Filename from MacOS channel: $currentFile");
+    if (currentFile != null) return currentFile;
   }
   FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.custom, allowedExtensions: _allowedExtensions, lockParentWindow: true);
   FLog.info(text: "Filename from FilePicker: ${result?.files.first.path}");
