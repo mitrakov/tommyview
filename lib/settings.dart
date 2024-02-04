@@ -23,13 +23,13 @@ class _SettingsDialogState extends State<_SettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
+    return WillPopScope( // don't use PopScope. It throws: Failed assertion: line 5238 pos 12: '!_debugLocked': is not true.
       onWillPop: () async {
         Navigator.pop(context);
         return true;
       },
       child: AlertDialog(
-        title: Row(mainAxisAlignment: MainAxisAlignment.center, children: const [Text("Settings",style: TextStyle(fontSize: 20))]),
+        title: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Settings",style: TextStyle(fontSize: 20))]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

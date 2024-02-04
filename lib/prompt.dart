@@ -113,7 +113,7 @@ class _PromptDialogState extends State<_PromptDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
+    return WillPopScope( // don't use PopScope. It throws: Failed assertion: line 5238 pos 12: '!_debugLocked': is not true.
       onWillPop: () async {
         Navigator.pop(context, null);
         return true;
@@ -156,7 +156,7 @@ class _PromptDialogState extends State<_PromptDialog> {
             obscureText: stateObscureText,
             obscuringCharacter: widget.obscuringCharacter,
             textCapitalization: widget.textCapitalization,
-            onEditingComplete: () {
+            onEditingComplete: () { // adds ENTER hotkey
               if (_formKey.currentState!.validate()) {
                 Navigator.pop(context, value);
               }

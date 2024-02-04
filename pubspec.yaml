@@ -1,5 +1,5 @@
-# MacOS   built with Flutter 3.7.12, CocoaPods 1.14.3
-# Windows built with Flutter 3.7.12
+# MacOS   built with Flutter 3.16.9, CocoaPods 1.14.3
+# Windows built with Flutter 3.16.9
 name: tommyview
 description: Simple lightweight free open source cross-platform images viewer and editor for MacOS and Windows.
 
@@ -11,14 +11,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  path: 1.8.3                     # paths
-  file_picker: 5.3.1              # open-file dialog (5.3.1 is last compatible)
-  window_manager: 0.3.4           # set title to window
+  path: 1.9.0                     # paths
+  file_picker: 6.1.1              # open-file dialog (5.3.1 is last compatible)
+  window_manager: 0.3.8           # set title to window
   image_editor: 1.3.0             # image library, see comments in main.dart
-  image: 4.1.3                    # image library, see comments in main.dart
+  image: 4.1.6                    # image library, see comments in main.dart
   flutter_platform_alert: 0.4.0   # platform dialogs
-  extended_image: 7.0.2           # image viewer (7.0.2 is last compatible)
-  package_info_plus: 4.0.2        # get version, build and app name
+  extended_image: 8.2.0           # image viewer (7.0.2 is last compatible)
+  package_info_plus: 5.0.1        # get version, build and app name
   f_logs: 2.0.1                   # logger
   shared_preferences: 2.2.2       # preferences store
   menubar:                        # native menu bar for Windows/Linux; should be removed once Flutter PlatformMenuBar supports Windows/Linux
@@ -28,7 +28,7 @@ dependencies:
       ref: master
 
 dev_dependencies:
-  flutter_lints: 2.0.1
+  flutter_lints: 3.0.1
 
 flutter:
   uses-material-design: true
