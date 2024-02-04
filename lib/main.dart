@@ -41,7 +41,7 @@ Future<String> getStartFile(List<String> args) async {
       return currentFile;
     }
   }
-  FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.custom, allowedExtensions: _allowedExtensions);
+  FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.custom, allowedExtensions: _allowedExtensions, lockParentWindow: true);
   FLog.info(text: "Filename from FilePicker: ${result?.files.first.path}");
   return result?.files.first.path ?? "";
 }
@@ -50,7 +50,7 @@ class MyApp extends StatefulWidget {
   final String startPath;
   late final List<File> files;
 
-  MyApp(this.startPath, {Key? key}) : super(key: key) {
+  MyApp(this.startPath, {super.key}) {
     files = Directory(path.dirname(startPath))
       .listSync()                                                                                        // get all folder children
       .whereType<File>()                                                                                 // filter out directories
@@ -93,9 +93,9 @@ class _MyAppState extends State<MyApp> {
       menus: [
         PlatformMenu(label: "Hey-Hey", menus: [
           PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Settings       ⌘, or F4",   onSelected: _showSettingsDialog),
+            PlatformMenuItem(label: "Settings       ⌘, or F4",       onSelected: _showSettingsDialog),
           ]),
-          PlatformMenuItem(label: "Quit              ⌘W or ⌘Q",            onSelected: () => exit(0)),
+          PlatformMenuItem(label: "Quit              ⌘W or ⌘Q",      onSelected: () => exit(0)),
         ]),
         PlatformMenu(label: "File", menus: [
           PlatformMenuItemGroup(members: [
@@ -387,11 +387,14 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _showSaveLogsDialog() async {
-    String? filename = await FilePicker.platform.saveFile(dialogTitle: "Save logs", fileName: "tommyview.log");
+    String? filename = await FilePicker.platform.saveFile(dialogTitle: "Save logs", fileName: "tommyview.log", lockParentWindow: true);
     if (filename != null) {
       final f = File(filename);
       final logs = await FLog.getAllLogs();
-      logs.forEach((log) => f.writeAsStringSync(log.toJson().toString()));
+      final sink = f.openWrite();
+      sink.writeAll(logs.map((e) => e.toJson()), "\n");
+      sink.close();
+      FLog.clearLogs();
     }
   }
 
