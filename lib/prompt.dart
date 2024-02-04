@@ -1,5 +1,5 @@
 // by prompt_dialog: ^1.0.9
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 
 Future<String?> prompt(
     BuildContext context, {
@@ -16,7 +16,7 @@ Future<String?> prompt(
       TextInputType? keyboardType,
       TextInputAction? textInputAction,
       bool obscureText = false,
-      String obscuringCharacter = '•',
+      String obscuringCharacter = "•",
       bool showPasswordIcon = false,
       bool barrierDismissible = false,
       TextCapitalization textCapitalization = TextCapitalization.none,
@@ -165,19 +165,19 @@ class _PromptDialogState extends State<_PromptDialog> {
           ),
         ),
         actions: <Widget>[
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context, null),
             child: (widget.textCancel != null)
                 ? widget.textCancel!
-                : const Text('Cancel'),
+                : const Text("Cancel"),
           ),
-          TextButton(
+          OutlinedButton(
             onPressed: () {
               if (_formKey.currentState!.validate()) {
                 Navigator.pop(context, value);
               }
             },
-            child: (widget.textOK != null) ? widget.textOK! : const Text('OK'),
+            child: (widget.textOK != null) ? widget.textOK! : const Text("OK"),
           ),
         ],
       ),

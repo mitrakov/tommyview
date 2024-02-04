@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, curly_braces_in_flow_control_structures, use_build_context_synchronously, avoid_function_literals_in_foreach_calls
 import "dart:io";
+import "package:f_logs/f_logs.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:package_info_plus/package_info_plus.dart";
@@ -8,10 +9,12 @@ import "package:image/image.dart" as img;
 import "package:image_editor/image_editor.dart";
 import "package:file_picker/file_picker.dart";
 import "package:extended_image/extended_image.dart";
+import "package:shared_preferences/shared_preferences.dart";
 import "package:window_manager/window_manager.dart";
 import "package:flutter_platform_alert/flutter_platform_alert.dart";
 import "package:menubar/menubar.dart";
 import "package:tommyview/prompt.dart";
+import "package:tommyview/settings.dart";
 
 // Bugs and feature requests: win32, check AVIF format
 void main(List<String> args) async {
@@ -25,14 +28,21 @@ const _allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "wbmp", 
 
 /// Returns a file that has been opened with our App (or "" if a user cancels OpenFileDialog)
 Future<String> getStartFile(List<String> args) async {
-  if (args.isNotEmpty) return args.first;
+  if (args.isNotEmpty) {
+    FLog.info(text: "Filename from args: ${args.first}");
+    return args.first;
+  }
   if (Platform.isMacOS) {
     // in MacOS, we need to make a call to Swift native code to check if a file has been opened with our App
     const hostApi = MethodChannel("mitrakov");
     final String? currentFile = await hostApi.invokeMethod("getCurrentFile");
-    if (currentFile != null) return currentFile;
+    if (currentFile != null) {
+      FLog.info(text: "Filename from MacOS channel: $currentFile");
+      return currentFile;
+    }
   }
   FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.custom, allowedExtensions: _allowedExtensions);
+  FLog.info(text: "Filename from FilePicker: ${result?.files.first.path}");
   return result?.files.first.path ?? "";
 }
 
@@ -54,6 +64,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  static const String qualitySettingKey = "quality";
+  static const int defaultQuality = 99;
   final editorKey = GlobalKey<ExtendedImageEditorState>();
   final extImgKey = GlobalKey();         // key to access ExtendedImage widget
   late File _currentFile;
@@ -80,34 +92,37 @@ class _MyAppState extends State<MyApp> {
     return PlatformMenuBar(
       menus: [
         PlatformMenu(label: "Hey-Hey", menus: [
-          PlatformMenuItem(label: "Quit        ⌘W or ⌘Q",            onSelected: () => exit(0))
+          PlatformMenuItemGroup(members: [
+            PlatformMenuItem(label: "Settings       ⌘, or F4",   onSelected: _showSettingsDialog),
+          ]),
+          PlatformMenuItem(label: "Quit              ⌘W or ⌘Q",            onSelected: () => exit(0)),
         ]),
         PlatformMenu(label: "File", menus: [
           PlatformMenuItemGroup(members: [
             PlatformMenuItem(label: "Next              →",           onSelected: _nextImage),
-            PlatformMenuItem(label: "Previous       ←",              onSelected: _previousImage)
+            PlatformMenuItem(label: "Previous       ←",              onSelected: _previousImage),
           ]),
           PlatformMenuItemGroup(members: [
             PlatformMenuItem(label: "Save              ↩",           onSelected: _saveFile),
             PlatformMenuItem(label: "Rename        ⌘R or F2 or ⇧F6", onSelected: () => _renameFile(context)),
-            PlatformMenuItem(label: "Delete           ⌫ or ⌦",       onSelected: _deleteFile)
+            PlatformMenuItem(label: "Delete           ⌫ or ⌦",       onSelected: _deleteFile),
           ])
         ]),
         PlatformMenu(label: "Еdit", menus: [
           PlatformMenuItemGroup(members: [
             PlatformMenuItem(label: "Turn ⟳        ↑",              onSelected: _rotateClockwise),
-            PlatformMenuItem(label: "Turn ⟲        ↓",              onSelected: _rotateCounterclockwise)
+            PlatformMenuItem(label: "Turn ⟲        ↓",              onSelected: _rotateCounterclockwise),
           ]),
           PlatformMenuItemGroup(members: [
             PlatformMenuItem(label: "Bulk Turn ⟳   ⇧↑",              onSelected: _rotateClockwiseBulk),
-            PlatformMenuItem(label: "Bulk Turn ⟲   ⇧↓",              onSelected: _rotateCounterclockwiseBulk)
+            PlatformMenuItem(label: "Bulk Turn ⟲   ⇧↓",              onSelected: _rotateCounterclockwiseBulk),
           ]),
           PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Crop            ⌘E or F3",      onSelected: _switchMode)
+            PlatformMenuItem(label: "Crop            ⌘E or F3",      onSelected: _switchMode),
           ])
         ]),
         PlatformMenu(label: "Help", menus: [
-          PlatformMenuItem(label: "About        F1",                 onSelected: _showAboutDialog)
+          PlatformMenuItem(label: "About        F1",                 onSelected: _showAboutDialog),
         ])
       ],
       child: Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
@@ -126,9 +141,12 @@ class _MyAppState extends State<MyApp> {
           SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
           SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
           SingleActivator(LogicalKeyboardKey.keyE, meta: Platform.isMacOS, control: !Platform.isMacOS): SwitchModeIntent(),
+          SingleActivator(LogicalKeyboardKey.comma,meta: Platform.isMacOS, control: !Platform.isMacOS): SettingsIntent(),
           SingleActivator(LogicalKeyboardKey.f1):                                                       AboutDialogIntent(),
           SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
           SingleActivator(LogicalKeyboardKey.f3):                                                       SwitchModeIntent(),
+          SingleActivator(LogicalKeyboardKey.f4):                                                       SettingsIntent(),
+          SingleActivator(LogicalKeyboardKey.f9, shift: true):                                          SaveLogsIntent(),
           SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
         },
         child: Actions(
@@ -145,6 +163,8 @@ class _MyAppState extends State<MyApp> {
             SwitchModeIntent:                 CallbackAction(onInvoke: (_) => _switchMode()),
             SetModeViewerIntent:              CallbackAction(onInvoke: (_) => _setModeToViewer()),
             AboutDialogIntent:                CallbackAction(onInvoke: (_) => _showAboutDialog()),
+            SettingsIntent:                   CallbackAction(onInvoke: (_) => _showSettingsDialog()),
+            SaveLogsIntent:                   CallbackAction(onInvoke: (_) => _showSaveLogsDialog()),
             CloseWindowIntent:                CallbackAction(onInvoke: (_) => exit(0)),
           },
           child: Focus(              // needed for Shortcuts
@@ -357,6 +377,24 @@ class _MyAppState extends State<MyApp> {
     FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: IconStyle.information);
   }
 
+  void _showSettingsDialog() async {
+    final storage = await SharedPreferences.getInstance();
+    final int currentQuality = storage.getInt(qualitySettingKey) ?? defaultQuality;
+    showSettings(context, currentQuality, (newQuality) async {
+      if (currentQuality != newQuality)
+        await storage.setInt(qualitySettingKey, newQuality);
+    });
+  }
+
+  void _showSaveLogsDialog() async {
+    String? filename = await FilePicker.platform.saveFile(dialogTitle: "Save logs", fileName: "tommyview.log");
+    if (filename != null) {
+      final f = File(filename);
+      final logs = await FLog.getAllLogs();
+      logs.forEach((log) => f.writeAsStringSync(log.toJson().toString()));
+    }
+  }
+
   /// converter that uses "image" library
   /// +: cross-platform: Windows, Linux, MacOS
   /// -: sometimes cuts off EXIF data: "Corrupt data. The data provided does not follow the specification. ExifData: Tag data past end of buffer (1823 > 1915)" (v4.1.3)
@@ -376,10 +414,14 @@ class _MyAppState extends State<MyApp> {
   /// -: only MacOS 10.15+
   /// -: no Webp support
   Future<Uint8List> _converterMacOs(Uint8List image, String path, int? rotate, Rect? cropRect) async {
+    final storage = await SharedPreferences.getInstance();
+    final quality = storage.getInt(qualitySettingKey) ?? defaultQuality;
+    FLog.info(text: "Save file on quality = $quality");
+
     final option = ImageEditorOption(); // AddTextOption, ClipOption, ColorOption, DrawOption, FlipOption, MaxImageOption, RotateOption, ScaleOption
     if (rotate != null) option.addOption(RotateOption(rotate));
     if (cropRect != null) option.addOption(ClipOption(x: cropRect.left, y: cropRect.top, width: cropRect.width, height: cropRect.height));
-    option.outputFormat = isPng ? OutputFormat.png(100) : OutputFormat.jpeg(100); // this is needed! Default quality for PNG is awful
+    option.outputFormat = isPng ? OutputFormat.png(quality) : OutputFormat.jpeg(quality);
     final result = await ImageEditor.editImage(image: image, imageEditorOption: option);
     return result!;
   }
@@ -412,7 +454,9 @@ class _MyAppState extends State<MyApp> {
         NativeMenuItem(label: "Rename        Ctrl+R or F2 or Shift+F6", onSelected: () => _renameFile(context)),
         NativeMenuItem(label: "Delete           Del or Backspace",      onSelected: _deleteFile),
         const NativeMenuDivider(),
-        NativeMenuItem(label: "Quit              Ctrl+W or Alt+F4",     onSelected: () => exit(0))
+        NativeMenuItem(label: "Settings         Ctrl+, or F4",          onSelected: _showSettingsDialog),
+        const NativeMenuDivider(),
+        NativeMenuItem(label: "Quit              Ctrl+W or Alt+F4",     onSelected: () => exit(0)),
       ]),
       NativeSubmenu(label: "Еdit", children: [
         NativeMenuItem(label: "Turn ⟳        ↑",                       onSelected: _rotateClockwise),
@@ -421,10 +465,10 @@ class _MyAppState extends State<MyApp> {
         NativeMenuItem(label: "Bulk Turn ⟳   Shift+↑",                  onSelected: _rotateClockwiseBulk),
         NativeMenuItem(label: "Bulk Turn ⟲   Shift+↓",                  onSelected: _rotateCounterclockwiseBulk),
         const NativeMenuDivider(),
-        NativeMenuItem(label: "Crop            Ctrl+E or F3",           onSelected: _switchMode)
+        NativeMenuItem(label: "Crop            Ctrl+E or F3",           onSelected: _switchMode),
       ]),
       NativeSubmenu(label: "Help", children: [
-        NativeMenuItem(label: "About        F1",                        onSelected: _showAboutDialog)
+        NativeMenuItem(label: "About        F1",                        onSelected: _showAboutDialog),
       ])
     ]);
   }
@@ -458,4 +502,6 @@ class DeleteFileIntent extends Intent {}
 class CloseWindowIntent extends Intent {}
 class SwitchModeIntent extends Intent {}
 class SetModeViewerIntent extends Intent {}
+class SettingsIntent extends Intent {}
+class SaveLogsIntent extends Intent {}
 class AboutDialogIntent extends Intent {}
