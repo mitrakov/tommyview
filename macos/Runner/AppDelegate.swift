@@ -8,8 +8,9 @@ class AppDelegate: FlutterAppDelegate {
   }
 
   // called when a user double-clicks on a file in Finder
-  override func application(_ sender: NSApplication, openFile filename: String) -> Bool {
-      (mainFlutterWindow as! MainFlutterWindow).currentFile = filename
-    return true
+  override func application(_ application: NSApplication, open urls: [URL]) {
+    if (!urls.isEmpty) {
+      (mainFlutterWindow as! MainFlutterWindow).currentFile = urls.first!.path
+    }
   }
 }
