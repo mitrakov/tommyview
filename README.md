@@ -15,7 +15,7 @@ Simple lightweight free open source cross-platform images viewer and editor for 
 - Go to [Releases](https://github.com/mitrakov/tommyview/releases) and download the latest version for MacOS.
 - Unpack the *.zip file to `/Applications` folder.
 - Set `TommyView` as a default app for images:
-  - in Finder, right-click on an image, tap "Get Info", in "Open with" section choose `TommyView` app, and click "Change All...".
+  - in Finder, right-click on an image, tap "Open with > Other...", then choose `TommyView` app, and select "Always Open With".
 
 ## Shortcuts
 | Function      | MacOS                 | Windows                        |
