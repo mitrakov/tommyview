@@ -385,7 +385,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _showSaveLogsDialog() async {
-    String? filename = await FilePicker.platform.saveFile(dialogTitle: "Save logs", fileName: "tommyview.log", lockParentWindow: true);
+    final filename = await FilePicker.platform.saveFile(dialogTitle: "Save logs", fileName: "tommyview.log", lockParentWindow: true);
     if (filename != null) {
       final f = File(filename);
       final logs = await FLog.getAllLogs();
