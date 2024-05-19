@@ -16,7 +16,7 @@ import "package:menubar/menubar.dart";
 import "package:tommyview/prompt.dart";
 import "package:tommyview/settings.dart";
 
-// Bugs and feature requests: win32, check AVIF format
+// TODO: intro on OpenFile
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
@@ -24,6 +24,7 @@ void main(List<String> args) async {
   runApp(MaterialApp(debugShowCheckedModeBanner: false, home: Scaffold(body: MyApp(startFile))));
 }
 
+// svg, and other vector formats, are not supported
 const _allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "wbmp", "heic", "ico", "cur", "avif"]; // should match the ones in Info.plist!
 
 /// Returns a file that has been opened with our App (or "" if a user cancels OpenFileDialog)
