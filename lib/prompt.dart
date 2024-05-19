@@ -51,7 +51,6 @@ Future<String?> prompt(
 
 class _PromptDialog extends StatefulWidget {
   const _PromptDialog({
-    Key? key,
     this.title,
     this.textOK,
     this.textCancel,
@@ -69,7 +68,7 @@ class _PromptDialog extends StatefulWidget {
     required this.showPasswordIcon,
     required this.textCapitalization,
     required this.textAlign,
-  }) : super(key: key);
+  });
 
   final Widget? title;
   final Widget? textOK;
