@@ -15,6 +15,7 @@ import "package:flutter_platform_alert/flutter_platform_alert.dart";
 import "package:menubar/menubar.dart";
 import "package:tommyview/prompt.dart";
 import "package:tommyview/settings.dart";
+import "package:tommyview/moveto.dart";
 
 // TODO: intro on OpenFile
 void main(List<String> args) async {
@@ -105,6 +106,7 @@ class _MyAppState extends State<MyApp> {
             PlatformMenuItem(label: "Save              ↩",           onSelected: _saveFile),
             PlatformMenuItem(label: "Rename        ⌘R or F2 or ⇧F6", onSelected: () => _renameFile(context)),
             PlatformMenuItem(label: "Delete           ⌫ or ⌦",       onSelected: _deleteFile),
+            PlatformMenuItem(label: "Move To...     F6",             onSelected: _showMoveToDialog),
           ])
         ]),
         PlatformMenu(label: "Еdit", menus: [
@@ -145,6 +147,7 @@ class _MyAppState extends State<MyApp> {
           SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
           SingleActivator(LogicalKeyboardKey.f3):                                                       SwitchModeIntent(),
           SingleActivator(LogicalKeyboardKey.f4):                                                       SettingsIntent(),
+          SingleActivator(LogicalKeyboardKey.f6):                                                       MoveToIntent(),
           SingleActivator(LogicalKeyboardKey.f9, shift: true):                                          SaveLogsIntent(),
           SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
         },
@@ -163,6 +166,7 @@ class _MyAppState extends State<MyApp> {
             SetModeViewerIntent:              CallbackAction(onInvoke: (_) => _setModeToViewer()),
             AboutDialogIntent:                CallbackAction(onInvoke: (_) => _showAboutDialog()),
             SettingsIntent:                   CallbackAction(onInvoke: (_) => _showSettingsDialog()),
+            MoveToIntent:                     CallbackAction(onInvoke: (_) => _showMoveToDialog()),
             SaveLogsIntent:                   CallbackAction(onInvoke: (_) => _showSaveLogsDialog()),
             CloseWindowIntent:                CallbackAction(onInvoke: (_) => exit(0)),
           },
@@ -285,14 +289,18 @@ class _MyAppState extends State<MyApp> {
       final text = 'Remove file "${path.basename(_currentFile.path)}"?';
       if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
         _currentFile.deleteSync();
-        widget.files.removeAt(_index);
-        if (widget.files.isEmpty) exit(0);
-        else setState(() {
-          if (_index >= widget.files.length) _index--; // if we deleted last file => switch pointer to previous
-          _currentFile = widget.files[_index];
-        });
+        _updateCurrentFileAfterDelete();
       }
     }
+  }
+
+  void _updateCurrentFileAfterDelete() {
+    widget.files.removeAt(_index);
+    if (widget.files.isEmpty) exit(0);
+    else setState(() {
+      if (_index >= widget.files.length) _index--; // if we deleted last file => switch pointer to previous
+      _currentFile = widget.files[_index];
+    });
   }
 
   void _renameFile(BuildContext context, {String? initialText}) async {
@@ -385,6 +393,8 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  void _showMoveToDialog() => showMoveToDialog(context, _currentFile.path, _updateCurrentFileAfterDelete);
+
   void _showSaveLogsDialog() async {
     final filename = await FilePicker.platform.saveFile(dialogTitle: "Save logs", fileName: "tommyview.log", lockParentWindow: true);
     if (filename != null) {
@@ -455,6 +465,7 @@ class _MyAppState extends State<MyApp> {
         NativeMenuItem(label: "Save              Enter",                onSelected: _saveFile),
         NativeMenuItem(label: "Rename        Ctrl+R or F2 or Shift+F6", onSelected: () => _renameFile(context)),
         NativeMenuItem(label: "Delete           Del or Backspace",      onSelected: _deleteFile),
+        NativeMenuItem(label: "Move To...     F6",                      onSelected: _showMoveToDialog),
         const NativeMenuDivider(),
         NativeMenuItem(label: "Settings         Ctrl+, or F4",          onSelected: _showSettingsDialog),
         const NativeMenuDivider(),
@@ -505,5 +516,6 @@ class CloseWindowIntent extends Intent {}
 class SwitchModeIntent extends Intent {}
 class SetModeViewerIntent extends Intent {}
 class SettingsIntent extends Intent {}
+class MoveToIntent extends Intent {}
 class SaveLogsIntent extends Intent {}
 class AboutDialogIntent extends Intent {}
