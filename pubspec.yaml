@@ -3,7 +3,7 @@
 name: tommyview
 description: Simple lightweight free open source cross-platform images viewer and editor for MacOS and Windows.
 
-version: 24.2.5+18               # by calver.org, YY.MM.DD+build_number
+version: 24.9.9+19               # by calver.org, YY.MM.DD+build_number
 
 environment:
   sdk: '>=2.19.6 <3.0.0'
