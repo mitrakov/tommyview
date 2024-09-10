@@ -44,16 +44,11 @@ class _MoveToDialogState extends State<_MoveToDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  height: 500,
-                  width: 800,
+                  height: 600,
+                  width: 900,
                   child: Focus(
-                    focusNode: FocusNode(),                          // TODO: bug: sometimes focus goes to the buttons instead of MyListView
-                    child: MyListView(moveToList, (selected) async { // TODO: bug: "moveToList" may change, this will cause errors on "add new location"
-                      if (await _renameFile(selected)) {
-                        widget.onSelect();
-                        Navigator.pop(context);
-                      }
-                    }),
+                    focusNode: FocusNode(),                     // TODO: bug: sometimes focus goes to the buttons instead of MyListView
+                    child: MyListView(moveToList, _onSelected), // TODO: bug: "moveToList" may change, this will cause errors on "add new location"
                   ),
                 ),
               ],
@@ -63,7 +58,8 @@ class _MoveToDialogState extends State<_MoveToDialog> {
                 onPressed: () async {
                   String? path = await FilePicker.platform.getDirectoryPath(dialogTitle: "Select a folder", lockParentWindow: true);
                   if (path != null) {
-                    moveToList.add(path);
+                    if (!moveToList.contains(path))
+                      moveToList.add(path);
                     settings.setStringList(moveToSettingKey, moveToList);
                     setState(() {});
                   }
@@ -89,6 +85,13 @@ class _MoveToDialogState extends State<_MoveToDialog> {
     );
   }
 
+  void _onSelected(String selected) async {
+    if (await _renameFile(selected)) {
+      widget.onSelect();
+      Navigator.pop(context);
+    }
+  }
+
   Future<bool> _renameFile(String newDir) async {
     final newPath = path.join(newDir, path.basename(widget.filepath));
     if (File(newPath).existsSync()) {
@@ -103,6 +106,7 @@ class _MoveToDialogState extends State<_MoveToDialog> {
   bool _renameFileImpl(String newPath) {
     final newFolder = path.dirname(newPath);
     if (Directory(newFolder).existsSync()) {
+      print("Moving from ${widget.filepath} to ${newPath}");
       File(widget.filepath).renameSync(newPath);
       return true;
     } else {
