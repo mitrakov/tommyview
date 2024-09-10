@@ -14,6 +14,7 @@ class MyListView extends StatefulWidget {
 }
 
 class _MyListViewState extends State<MyListView> {
+  int? selected;
   late FocusNode _focusNode;
 
   @override
@@ -53,7 +54,6 @@ class _MyListViewState extends State<MyListView> {
     }
   }
 
-  int? selected;
   @override
   void dispose() {
     _focusNode.dispose();
@@ -67,17 +67,16 @@ class _MyListViewState extends State<MyListView> {
   @override
   Widget build(BuildContext context) {
     return Shortcuts(
-      shortcuts: <LogicalKeySet, Intent>{
+      shortcuts: {
         LogicalKeySet(LogicalKeyboardKey.arrowDown): NextIntent(),
         LogicalKeySet(LogicalKeyboardKey.arrowUp):   PreviousIntent(),
         LogicalKeySet(LogicalKeyboardKey.enter):     SelectIntent(),
-        LogicalKeySet(LogicalKeyboardKey.escape):    UnFocusIntent(),
       },
       child: Actions(
-        actions: <Type, Action<Intent>>{
-          NextIntent: _nextAction,
+        actions: {
+          NextIntent:     _nextAction,
           PreviousIntent: _previousAction,
-          SelectIntent: _selectAction,
+          SelectIntent:   _selectAction,
         },
         child: Focus(
           autofocus: true,
@@ -89,9 +88,8 @@ class _MyListViewState extends State<MyListView> {
                 focusNode: index < focus.length ? focus[index] : FocusNode(),
                 tileColor: selected == index ? Colors.blue : null, // Change the color for the focused item
                 title: Text(widget.items[index]),
-                onTap: () {
-                  // Handle item tap
-                },
+                dense: true,
+                onTap: () => widget.onSelect(widget.items[index]),
                 onFocusChange: (hasFocus) {
                   if (hasFocus) {
                     _focusNode.debugLabel = index.toString();
@@ -112,4 +110,3 @@ class _CallbackAction<T extends Intent> extends CallbackAction<T> {
 class NextIntent extends Intent {} // action to move to the next suggestion
 class PreviousIntent extends Intent {} // action to move to the previous suggestion
 class SelectIntent extends Intent {} // action to select the suggestion
-class UnFocusIntent extends Intent {} // action to hide the suggestions
