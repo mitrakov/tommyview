@@ -1,34 +1,31 @@
-# MacOS   built with Flutter 3.19.4 (Intel x64), CocoaPods 1.15.2
-# Windows built with Flutter 3.16.9
+# MacOS   built with Flutter 3.38.5 (Mac Apple M1), Dart 3.10.4, CocoaPods 1.16.2, Xcode 26.2
+# Windows built with Flutter 3.38.5
 name: tommyview
 description: Simple lightweight free open source cross-platform images viewer and editor for MacOS and Windows.
-
-version: 24.9.10+20               # by calver.org, YY.MM.DD+build_number
+publish_to: none
+version: 1.2.11+21
 
 environment:
-  sdk: '>=2.19.6 <3.0.0'
+  sdk: '>=3.10.4 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  path: 1.9.0                     # paths
-  file_picker: 6.1.1              # open-file dialog (5.3.1 is last compatible)
-  window_manager: 0.3.8           # set title to window
-  image_editor: 1.3.0             # image library, see comments in main.dart
-  image: 4.1.6                    # image library, see comments in main.dart
-  flutter_platform_alert: 0.4.0   # platform dialogs
-  extended_image: 8.2.0           # image viewer (7.0.2 is last compatible)
-  package_info_plus: 5.0.1        # get version, build and app name
+  path: 1.9.1                     # paths
+  file_picker: 10.3.7             # open-file dialog
+  window_manager: 0.5.1           # set title to window
+  image_editor: 1.6.0             # image library, see comments in main.dart
+  image: 4.6.0                    # image library, see comments in main.dart
+  flutter_platform_alert: 0.8.0   # platform dialogs
+  extended_image: 10.0.1          # image viewer
+  package_info_plus: 9.0.0        # get version, build and app name
   f_logs: 2.0.1                   # logger
-  shared_preferences: 2.2.2       # preferences store
+  shared_preferences: 2.5.4       # preferences store
   menubar:                        # native menu bar for Windows/Linux; should be removed once Flutter PlatformMenuBar supports Windows/Linux
     git:
       url: https://github.com/google/flutter-desktop-embedding.git
       path: plugins/menubar
       ref: master
-
-dev_dependencies:
-  flutter_lints: 3.0.1
 
 flutter:
   uses-material-design: true

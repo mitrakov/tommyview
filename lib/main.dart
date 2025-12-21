@@ -1,4 +1,3 @@
-// ignore_for_file: prefer_const_constructors, curly_braces_in_flow_control_structures, use_build_context_synchronously, avoid_function_literals_in_foreach_calls
 import "dart:io";
 import "package:f_logs/f_logs.dart";
 import "package:flutter/material.dart";
@@ -18,6 +17,24 @@ import "package:tommyview/settings.dart";
 import "package:tommyview/moveto.dart";
 
 // TODO: intro on OpenFile
+/*
+Build for MacOS:
+  bump version in pubspec.yaml
+  flutter build macos
+  xCode: Product -> Destination -> Any Mac (arm64, x86_64)
+  xCode: Product -> Archive -> Distribute App -> Direct Distribution -> wait for 30-40 sec for notarization service to complete
+  copy "Las Notes.app" to "_installer/macos/App"
+  run _installer/macos/build-dmg.sh
+  move *.dmg image to _dist
+
+Build for Windows:
+  bump version in _installer\windows\inno-setup.iss (align with pubspec.yaml)
+  flutter build windows
+  copy files from "build\windows\x64\runner\Release" to "_installer\windows\TommyView"
+  add there "vcruntime140_1.dll"
+  Compile "_installer\windows\inno-setup.iss" with InnoSetup Compiler (CTRL+F9)
+  move *.exe file to _dist
+ */
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
