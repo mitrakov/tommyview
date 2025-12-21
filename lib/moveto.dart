@@ -1,5 +1,3 @@
-// ignore_for_file: curly_braces_in_flow_control_structures
-
 import "dart:io";
 import "package:path/path.dart" as path;
 import "package:file_picker/file_picker.dart";

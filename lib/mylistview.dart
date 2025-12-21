@@ -1,4 +1,3 @@
-// ignore_for_file: use_key_in_widget_constructors, curly_braces_in_flow_control_structures
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
