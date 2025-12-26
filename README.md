@@ -1,24 +1,29 @@
 # TommyView
 
-Simple lightweight free open source cross-platform images viewer and editor for MacOS and Windows.
+Simple lightweight free open source cross-platform images viewer and editor for MacOS, Windows and Linux.
 
 ![](tommyview.gif)
 
 ## Install
 ### Windows
-- Go to [Releases](https://github.com/mitrakov/tommyview/releases) and download the latest version for Windows.
+- Go to "dist" and download the latest version for Windows.
 - Run the Installer and follow the steps.
 - Set `TommyView` as a default app for images:
   - in `File Explorer`, right-click on an image, tap "Open with > Choose another app", then choose `TommyView` app, and select "Always use this app to open image files". 
 
 ### MacOS
-- Go to [Releases](https://github.com/mitrakov/tommyview/releases) and download the latest version for MacOS.
+- Go to "dist" and download the latest version for MacOS.
 - Run the Installer and follow the steps.
 - Set `TommyView` as a default app for images:
   - in `Finder`, right-click on an image, tap "Get Info", in "Open with" section choose `TommyView` app, and click "Change All...".
 
+### Linux
+- Go to "dist" and download the latest version for Linux.
+- Unzip *.zip file.
+- Enjoy.
+
 ## Shortcuts
-| Function      | MacOS                 | Windows                        |
+| Function      | MacOS                 | Windows and Linux              |
 |---------------|-----------------------|--------------------------------|
 | Next file     | `→`                   | `→`                            |
 | Previous file | `←`                   | `←`                            |
@@ -33,6 +38,7 @@ Simple lightweight free open source cross-platform images viewer and editor for 
 | Move To...    | `F6`                  | `F6`                           |
 | Settings      | `⌘,` or `F4`          | `CTRL+,` or `F4`               |
 | About         | `F1`                  | `F1`                           |
+| Save logs     | `⇧F9`                 | `Shift+F9`                     |
 | Quit          | `⌘W` or `⌘Q`          | `Ctrl+W` or `Alt+F4`           |
 
 ## Issues
@@ -41,7 +47,7 @@ For issues, bugs and feature requests use this [GitHub page](https://github.com/
 ## License
 Published under MIT License.
 
-2023 © Artem Mitrakov. All rights reserved.
+2023-2026 © Artem Mitrakov. All rights reserved.
 
 ## Contribution
 If you want to help with code contribution or language translations please [let us know](mailto:mitrakov-artem@yandex.ru).

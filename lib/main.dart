@@ -23,9 +23,9 @@ Build for MacOS:
   flutter build macos
   xCode: Product -> Destination -> Any Mac (arm64, x86_64)
   xCode: Product -> Archive -> Distribute App -> Direct Distribution -> wait for 30-40 sec for notarization service to complete
-  copy "Las Notes.app" to "_installer/macos/App"
+  copy "TommyView.app" to "_installer/macos/App"
   run _installer/macos/build-dmg.sh
-  move *.dmg image to _dist
+  move *.dmg image to dist/
 
 Build for Windows:
   bump version in _installer\windows\inno-setup.iss (align with pubspec.yaml)
@@ -33,49 +33,28 @@ Build for Windows:
   copy files from "build\windows\x64\runner\Release" to "_installer\windows\TommyView"
   add there "vcruntime140_1.dll"
   Compile "_installer\windows\inno-setup.iss" with InnoSetup Compiler (CTRL+F9)
-  move *.exe file to _dist
+  move *.exe file to dist\
+
+Build for Linux:
+  bump version in pubspec.yaml
+  flutter build linux
+  go to: build/linux/x64/release/bundle and rename "bundle" to "tommyview"
+  run: zip -r9 tommyview-linux-x.y.z.zip tommyview/
+  TO-DO: package to .rpm or .deb images
+  move *.zip file to dist/
  */
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
-  final startFile = await getStartFile(args);
-  runApp(MaterialApp(debugShowCheckedModeBanner: false, home: Scaffold(body: MyApp(startFile))));
+  runApp(MaterialApp(home: Scaffold(body: MyApp(args.firstOrNull))));
 }
 
 // svg, and other vector formats, are not supported
 const _allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "wbmp", "heic", "ico", "cur", "avif"]; // should match the ones in Info.plist!
 
-/// Returns a file that has been opened with our App (or "" if a user cancels OpenFileDialog)
-Future<String> getStartFile(List<String> args) async {
-  if (args.isNotEmpty) {
-    FLog.info(text: "Filename from args: ${args.first}");
-    return args.first;
-  }
-  if (Platform.isMacOS) {
-    // in MacOS, we need to make a call to Swift native code to check if a file has been opened with our App
-    const hostApi = MethodChannel("mitrakov");
-    final String? currentFile = await hostApi.invokeMethod("getCurrentFile");
-    FLog.info(text: "Filename from MacOS channel: $currentFile");
-    if (currentFile != null) return currentFile;
-  }
-  FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.custom, allowedExtensions: _allowedExtensions, lockParentWindow: true);
-  FLog.info(text: "Filename from FilePicker: ${result?.files.first.path}");
-  return result?.files.first.path ?? "";
-}
-
 class MyApp extends StatefulWidget {
-  final String startPath;
-  late final List<File> files;
-
-  MyApp(this.startPath, {super.key}) {
-    files = Directory(path.dirname(startPath))
-      .listSync()                                                                                        // get all folder children
-      .whereType<File>()                                                                                 // filter out directories
-      .where((f) => _allowedExtensions.map((s) => ".$s").contains(path.extension(f.path).toLowerCase())) // filter by extension
-      .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
-  }
-
+  final String? arg0;
+  const MyApp(this.arg0);
   @override
   State<MyApp> createState() => _MyAppState();
 }
@@ -85,11 +64,14 @@ class _MyAppState extends State<MyApp> {
   static const int defaultQuality = 99;
   final editorKey = GlobalKey<ExtendedImageEditorState>();
   final extImgKey = GlobalKey();         // key to access ExtendedImage widget
+  final List<File> files = [];
+
   late File _currentFile;
-  late int _index;
+  int _index = -1;                       // -1 means "No file selected"
   ExtendedImageMode _mode = ExtendedImageMode.gesture;
   int _rotate = 0;                       // in quarters (0=0°, 1=90°, 2=180°, etc.)
   Uint8List _forceLoad = Uint8List(0);   // force load flag used in _saveFile() to reload the image
+  bool _initDone = false;
 
   bool get isRotated => _rotate % 4 > 0; // result of "%" is always non-negative
   bool get isWebp => path.extension(_currentFile.path).toLowerCase() == ".webp";
@@ -98,13 +80,54 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _currentFile = widget.files.firstWhere((f) => f.path == widget.startPath, orElse: () => widget.files.first);
-    _index = widget.files.indexOf(_currentFile);
     if (!Platform.isMacOS) _createNativeMenu(); // tmp solution to create menu on Windows/Linux
+    initStateAsync();
+  }
+
+  void initStateAsync() async {
+    String? startPath = widget.arg0; // take initial file from "args" list (Windows, Linux)
+
+    if (Platform.isMacOS) {
+      // in MacOS, we need to make a call to Swift native code to check if a file has been opened with our App
+      const hostApi = MethodChannel("mitrakov");
+      startPath = await hostApi.invokeMethod("getCurrentFile");
+      FLog.info(text: "Filename from MacOS channel: $startPath");
+
+      // race conditions (in rare cases "getCurrentFile" may return null from Swift code, let's retry in 500 msec.)
+      if (startPath == null) {
+        await Future.delayed(Duration(milliseconds: 500), () async {
+          startPath = await hostApi.invokeMethod("getCurrentFile");
+        });
+        FLog.info(text: "Filename from MacOS channel (retry): $startPath");
+      }
+    }
+
+    if (startPath == null) { // take initial file from Files dialog
+      FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.custom, allowedExtensions: _allowedExtensions, lockParentWindow: true);
+      FLog.info(text: "Filename from FilePicker: ${result?.files.first.path}");
+      startPath = result?.files.first.path;
+    }
+
+    // init code
+    if (startPath != null) {
+      files.addAll(Directory(path.dirname(startPath!))
+          .listSync()                                                                                        // get all folder children
+          .whereType<File>()                                                                                 // filter out directories
+          .where((f) => _allowedExtensions.map((s) => ".$s").contains(path.extension(f.path).toLowerCase())) // filter by extension
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path)));
+      _currentFile = files.firstWhere((f) => f.path == startPath, orElse: () => files.first);
+      _index = files.indexOf(_currentFile);
+    }
+
+    setState(() {
+      _initDone = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_initDone) return Center(child: CircularProgressIndicator());
     _changeWindowTitle();
     return PlatformMenuBar(
       menus: [
@@ -167,6 +190,7 @@ class _MyAppState extends State<MyApp> {
           SingleActivator(LogicalKeyboardKey.f6):                                                       MoveToIntent(),
           SingleActivator(LogicalKeyboardKey.f9, shift: true):                                          SaveLogsIntent(),
           SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
+          SingleActivator(LogicalKeyboardKey.f12, shift: true):                                         DebugIntent(),
         },
         child: Actions(
           actions: {
@@ -185,6 +209,7 @@ class _MyAppState extends State<MyApp> {
             SettingsIntent:                   CallbackAction(onInvoke: (_) => _showSettingsDialog()),
             MoveToIntent:                     CallbackAction(onInvoke: (_) => _showMoveToDialog()),
             SaveLogsIntent:                   CallbackAction(onInvoke: (_) => _showSaveLogsDialog()),
+            DebugIntent:                      CallbackAction(onInvoke: (_) => _debug()),
             CloseWindowIntent:                CallbackAction(onInvoke: (_) => exit(0)),
           },
           child: Focus(              // needed for Shortcuts
@@ -194,6 +219,7 @@ class _MyAppState extends State<MyApp> {
               child: Builder(builder: (c) {
                 // 1) for Editor mode BoxFit must be "contain"
                 // 2) to access "rawImageData" in _saveFile() method, cacheRawData must be "true"
+                if (_index < 0) return Center(child: Text("Welcome to TommyView!\nNo image files selected."));
                 final result = _forceLoad.isNotEmpty
                   ? ExtendedImage.memory(key: extImgKey, _forceLoad,   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
                   : ExtendedImage.file  (key: extImgKey, _currentFile, mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
@@ -208,11 +234,13 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _changeWindowTitle() {
+    if (_index < 0) return;
     final title = "${path.basename(_currentFile.path)}${isRotated ? "*" : ""} ${_mode == ExtendedImageMode.editor ? " [Crop Mode]" : ""}";
     windowManager.setTitle(title);
   }
 
   void _switchMode() {
+    if (_index < 0) return;
     if (isWebp) _showWebpNotSupportedDialog();
     else setState(() {
       _mode = _mode == ExtendedImageMode.editor ? ExtendedImageMode.gesture : ExtendedImageMode.editor;
@@ -229,10 +257,10 @@ class _MyAppState extends State<MyApp> {
 
   void _nextImage() {
     if (_mode == ExtendedImageMode.gesture) {
-      if (_index < widget.files.length - 1) {
+      if (_index < files.length - 1) {
         setState(() {
           _index++;
-          _currentFile = widget.files[_index];
+          _currentFile = files[_index];
           _rotate = 0;
         });
       }
@@ -244,7 +272,7 @@ class _MyAppState extends State<MyApp> {
       if (_index > 0) {
         setState(() {
           _index--;
-          _currentFile = widget.files[_index];
+          _currentFile = files[_index];
           _rotate = 0;
         });
       }
@@ -252,6 +280,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _rotateClockwise() {
+    if (_index < 0) return;
     if (_mode == ExtendedImageMode.gesture) {
       if (isWebp) _showWebpNotSupportedDialog();
       else setState(() {
@@ -261,6 +290,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _rotateCounterclockwise() {
+    if (_index < 0) return;
     if (_mode == ExtendedImageMode.gesture) {
       if (isWebp) _showWebpNotSupportedDialog();
       else setState(() {
@@ -274,16 +304,17 @@ class _MyAppState extends State<MyApp> {
   void _rotateCounterclockwiseBulk() => _rotateBulkInternal(false);
 
   void _rotateBulkInternal(bool clockwise) async {
+    if (_index < 0) return;
     if (_mode == ExtendedImageMode.gesture) {
       if (!isRotated) {
         if (isWebp) _showWebpNotSupportedDialog();
         else {
           const title = "Attention!";
-          final text = "Are you sure you want to rotate and save ALL ${widget.files.length} file(s) at this folder ${clockwise ? "clockwise" : "counterclockwise"}?";
+          final text = "Are you sure you want to rotate and save ALL ${files.length} file(s) at this folder ${clockwise ? "clockwise" : "counterclockwise"}?";
           if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
             final ImageConverter converter = Platform.isMacOS ? _converterMacOs : _converterWinLinux;
             final int rotate = clockwise ? 90 : -90;
-            widget.files.forEach((file) async {
+            files.forEach((file) async {
               final Uint8List image = file.readAsBytesSync();
               final Uint8List bytes = await converter.call(image, file.path, rotate, null);
               file.writeAsBytesSync(bytes, flush: true);
@@ -312,15 +343,16 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _updateCurrentFileAfterDelete() {
-    widget.files.removeAt(_index);
-    if (widget.files.isEmpty) exit(0);
+    files.removeAt(_index);
+    if (files.isEmpty) exit(0);
     else setState(() {
-      if (_index >= widget.files.length) _index--; // if we deleted last file => switch pointer to previous
-      _currentFile = widget.files[_index];
+      if (_index >= files.length) _index--; // if we deleted last file => switch pointer to previous
+      _currentFile = files[_index];
     });
   }
 
   void _renameFile(BuildContext context, {String? initialText}) async {
+    if (_index < 0) return;
     if (_mode == ExtendedImageMode.gesture) {
       // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
       // also, set "barrierDismissible" to "true" to allow ESC button
@@ -348,9 +380,9 @@ class _MyAppState extends State<MyApp> {
     // the working directory is the same as the file location, which is not always the case.
     // E.g. if you run this App from IntelliJ IDEA, working directory will be different.
     final newFile = _currentFile.renameSync(newPath);
-    widget.files..removeAt(_index)..insert(_index, newFile);
+    files..removeAt(_index)..insert(_index, newFile);
     setState(() {
-      _currentFile = widget.files[_index];
+      _currentFile = files[_index];
     });
   }
 
@@ -410,7 +442,10 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void _showMoveToDialog() => showMoveToDialog(context, _currentFile.path, _updateCurrentFileAfterDelete);
+  void _showMoveToDialog() {
+    if (_index < 0) return;
+    showMoveToDialog(context, _currentFile.path, _updateCurrentFileAfterDelete);
+  }
 
   void _showSaveLogsDialog() async {
     final filename = await FilePicker.platform.saveFile(dialogTitle: "Save logs", fileName: "tommyview.log", lockParentWindow: true);
@@ -514,6 +549,14 @@ class _MyAppState extends State<MyApp> {
     }
     return rect;
   }
+
+  void _debug() async {
+    if (Platform.isMacOS) {
+      const hostApi = MethodChannel("mitrakov");
+      final String? currentFile = await hostApi.invokeMethod("getCurrentFile");
+      FlutterPlatformAlert.showAlert(windowTitle: "mitrakov channel", text: "$currentFile");
+    }
+  }
 }
 
 // Typedefs
@@ -536,3 +579,4 @@ class SettingsIntent extends Intent {}
 class MoveToIntent extends Intent {}
 class SaveLogsIntent extends Intent {}
 class AboutDialogIntent extends Intent {}
+class DebugIntent extends Intent {}
