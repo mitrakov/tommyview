@@ -1,9 +1,9 @@
 # MacOS   built with Flutter 3.38.5 (Mac Apple M1), Dart 3.10.4, CocoaPods 1.16.2, Xcode 26.2
 # Windows built with Flutter 3.38.5
 name: tommyview
-description: Simple lightweight free open source cross-platform images viewer and editor for MacOS and Windows.
+description: Simple lightweight free open source cross-platform images viewer and editor for MacOS, Windows and Linux.
 publish_to: none
-version: 1.2.11+21
+version: 1.2.12+22
 
 environment:
   sdk: '>=3.10.3 <4.0.0'
