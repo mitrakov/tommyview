@@ -50,7 +50,7 @@ void main(List<String> args) async {
 }
 
 // svg, and other vector formats, are not supported
-const _allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "wbmp", "heic", "ico", "cur", "avif"]; // should match the ones in Info.plist!
+const _allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "wbmp", "heic", "ico", "cur", "avif", "dng"]; // should match the ones in Info.plist!
 
 class MyApp extends StatefulWidget {
   final String? arg0;

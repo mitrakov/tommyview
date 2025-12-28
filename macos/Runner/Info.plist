@@ -20,6 +20,7 @@
 				<string>ico</string>
 				<string>cur</string>
 				<string>avif</string>
+				<string>dng</string>
 			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
