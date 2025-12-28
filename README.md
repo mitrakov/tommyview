@@ -22,6 +22,21 @@ Simple lightweight free open source cross-platform images viewer and editor for 
 - Unzip *.zip file.
 - Enjoy.
 
+## Supported formats
+- jpg/jpeg
+- png
+- gif
+- bmp
+- wbmp
+- heic
+- ico
+- cur
+- avif
+- dng
+- webp (read only)
+
+Vector formats (like svg) are not supported.
+
 ## Shortcuts
 | Function      | MacOS                 | Windows and Linux              |
 |---------------|-----------------------|--------------------------------|
