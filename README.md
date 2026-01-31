@@ -38,23 +38,24 @@ Simple lightweight free open source cross-platform images viewer and editor for 
 Vector formats (like svg) are not supported.
 
 ## Shortcuts
-| Function      | MacOS                 | Windows and Linux              |
-|---------------|-----------------------|--------------------------------|
-| Next file     | `→`                   | `→`                            |
-| Previous file | `←`                   | `←`                            |
-| Rotate ⟳      | `↑`                   | `↑`                            |
-| Rotate ⟲      | `↓`                   | `↓`                            |
-| Bulk Rotate ⟳ | `⇧↑`                  | `Shift+↑`                      |
-| Bulk Rotate ⟲ | `⇧↓`                  | `Shift+↓`                      |
-| Crop image    | `⌘E` or `F3`          | `Ctrl+E` or `F3`               |
-| Save File     | `↩`                   | `Enter`                        |
-| Delete File   | `⌫` or `⌦`            | `Del` or `Backspace`           |
-| Rename File   | `⌘R` or `F2` or `⇧F6` | `Ctrl+R` or `F2` or `Shift+F6` |
-| Move To...    | `F6`                  | `F6`                           |
-| Settings      | `⌘,` or `F4`          | `CTRL+,` or `F4`               |
-| About         | `F1`                  | `F1`                           |
-| Save logs     | `⇧F9`                 | `Shift+F9`                     |
-| Quit          | `⌘W` or `⌘Q`          | `Ctrl+W` or `Alt+F4`           |
+| Function          | MacOS                 | Windows and Linux              |
+|-------------------|-----------------------|--------------------------------|
+| Next file         | `→`                   | `→`                            |
+| Previous file     | `←`                   | `←`                            |
+| Rotate ⟳          | `↑`                   | `↑`                            |
+| Rotate ⟲          | `↓`                   | `↓`                            |
+| Bulk Rotate ⟳     | `⇧↑`                  | `Shift+↑`                      |
+| Bulk Rotate ⟲     | `⇧↓`                  | `Shift+↓`                      |
+| Crop image        | `⌘E` or `F3`          | `Ctrl+E` or `F3`               |
+| Save File         | `↩`                   | `Enter`                        |
+| Delete File       | `⌫` or `⌦`            | `Del` or `Backspace`           |
+| Rename File       | `⌘R` or `F2` or `⇧F6` | `Ctrl+R` or `F2` or `Shift+F6` |
+| Copy to Clipboard | `⌘C`                  | `Ctrl+C`                       |
+| Move To...        | `F6`                  | `F6`                           |
+| Settings          | `⌘,` or `F4`          | `CTRL+,` or `F4`               |
+| About             | `F1`                  | `F1`                           |
+| Save logs         | `⇧F9`                 | `Shift+F9`                     |
+| Quit              | `⌘W` or `⌘Q`          | `Ctrl+W` or `Alt+F4`           |
 
 ## Issues
 For issues, bugs and feature requests use this [GitHub page](https://github.com/mitrakov/tommyview/issues).
