@@ -37,16 +37,19 @@ class _MoveToDialogState extends State<_MoveToDialog> {
           final moveToList = settings.getStringList(moveToSettingKey) ?? [];
           final filename = path.basename(widget.filepath);
           return AlertDialog(
-            title: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('Move file "$filename" to...', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
+            title: Row(mainAxisAlignment: .center, children: [
+              Text('Move file "$filename" to...', style: const TextStyle(fontSize: 20, fontWeight: .bold))
+            ]),
             content: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 SizedBox(
                   height: 600,
                   width: 900,
                   child: Focus(
-                    focusNode: FocusNode(),                     // TODO: bug: sometimes focus goes to the buttons instead of MyListView
-                    child: MyListView(moveToList, _onSelected), // TODO: bug: "moveToList" may change, this will cause errors on "add new location"
+                    focusNode: FocusNode(),          // TODO: bug: sometimes focus goes to the buttons instead of MyListView
+                    // TODO: bug: "moveToList" may change, this will cause errors on "add new location"
+                    child: MyListView(moveToList, _onSelected),
                   ),
                 ),
               ],
@@ -95,7 +98,7 @@ class _MoveToDialogState extends State<_MoveToDialog> {
     if (File(newPath).existsSync()) {
       const title = "Overwrite file?";
       final text = 'Filename "$newPath" already exists. Overwrite?';
-      if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton)
+      if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: .yesNo, iconStyle: .warning) == .yesButton)
         return _renameFileImpl(newPath);
       else return false;
     } else return _renameFileImpl(newPath);
@@ -108,7 +111,7 @@ class _MoveToDialogState extends State<_MoveToDialog> {
       File(widget.filepath).renameSync(newPath);
       return true;
     } else {
-      FlutterPlatformAlert.showAlert(windowTitle: "ERROR", text: 'Folder "$newFolder" doesn\'t exist!', iconStyle: IconStyle.error);
+      FlutterPlatformAlert.showAlert(windowTitle: "ERROR", text: 'Folder "$newFolder" doesn\'t exist!', iconStyle: .error);
       return false;
     }
   }

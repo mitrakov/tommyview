@@ -67,9 +67,9 @@ class _MyListViewState extends State<MyListView> {
   Widget build(BuildContext context) {
     return Shortcuts(
       shortcuts: {
-        LogicalKeySet(LogicalKeyboardKey.arrowDown): NextIntent(),
-        LogicalKeySet(LogicalKeyboardKey.arrowUp):   PreviousIntent(),
-        LogicalKeySet(LogicalKeyboardKey.enter):     SelectIntent(),
+        LogicalKeySet(.arrowDown): NextIntent(),
+        LogicalKeySet(.arrowUp):   PreviousIntent(),
+        LogicalKeySet(.enter):     SelectIntent(),
       },
       child: Actions(
         actions: {

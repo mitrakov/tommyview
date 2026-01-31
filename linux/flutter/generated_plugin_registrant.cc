@@ -8,6 +8,7 @@
 
 #include <flutter_platform_alert/flutter_platform_alert_plugin.h>
 #include <menubar/menubar_plugin.h>
+#include <pasteboard/pasteboard_plugin.h>
 #include <screen_retriever_linux/screen_retriever_linux_plugin.h>
 #include <window_manager/window_manager_plugin.h>
 
@@ -18,6 +19,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) menubar_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "MenubarPlugin");
   menubar_plugin_register_with_registrar(menubar_registrar);
+  g_autoptr(FlPluginRegistrar) pasteboard_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "PasteboardPlugin");
+  pasteboard_plugin_register_with_registrar(pasteboard_registrar);
   g_autoptr(FlPluginRegistrar) screen_retriever_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "ScreenRetrieverLinuxPlugin");
   screen_retriever_linux_plugin_register_with_registrar(screen_retriever_linux_registrar);

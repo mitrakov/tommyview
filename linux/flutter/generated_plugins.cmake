@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_platform_alert
   menubar
+  pasteboard
   screen_retriever_linux
   window_manager
 )

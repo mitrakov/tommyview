@@ -24,9 +24,9 @@ class _SettingsDialogState extends State<_SettingsDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Settings", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
+      title: const Row(mainAxisAlignment: .center, children: [Text("Settings", style: TextStyle(fontSize: 20, fontWeight: .bold))]),
       content: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           Row(children: [
             const Text("Save quality:"),

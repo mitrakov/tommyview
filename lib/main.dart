@@ -3,6 +3,7 @@ import "package:f_logs/f_logs.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:package_info_plus/package_info_plus.dart";
+import "package:pasteboard/pasteboard.dart";
 import "package:path/path.dart" as path;
 import "package:image/image.dart" as img;
 import "package:image_editor/image_editor.dart";
@@ -16,7 +17,6 @@ import "package:tommyview/prompt.dart";
 import "package:tommyview/settings.dart";
 import "package:tommyview/moveto.dart";
 
-// TODO: intro on OpenFile
 /*
 Build for MacOS:
   bump version in pubspec.yaml
@@ -54,8 +54,8 @@ void main(List<String> args) async {
   runApp(MaterialApp(home: Scaffold(body: MyApp(args.firstOrNull))));
 }
 
-// svg, and other vector formats, are not supported
-const _allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "wbmp", "heic", "ico", "cur", "avif", "dng"]; // should match the ones in Info.plist!
+// should match the ones in Info.plist! (svg and other vector formats are not supported)
+const _allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "wbmp", "heic", "ico", "cur", "avif", "dng"];
 
 class MyApp extends StatefulWidget {
   final String? arg0;
@@ -65,15 +65,15 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  static const String qualitySettingKey = "quality";
-  static const int defaultQuality = 99;
+  static const qualitySettingKey = "quality";
+  static const defaultQuality = 99;
   final editorKey = GlobalKey<ExtendedImageEditorState>();
   final extImgKey = GlobalKey();         // key to access ExtendedImage widget
   final List<File> files = [];
 
   late File _currentFile;
   int _index = -1;                       // -1 means "No file selected"
-  ExtendedImageMode _mode = ExtendedImageMode.gesture;
+  ExtendedImageMode _mode = .gesture;
   int _rotate = 0;                       // in quarters (0=0°, 1=90°, 2=180°, etc.)
   Uint8List _forceLoad = Uint8List(0);   // force load flag used in _saveFile() to reload the image
   bool _initDone = false;
@@ -90,7 +90,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void initStateAsync() async {
-    String? startPath = widget.arg0; // take initial file from "args" list (Windows, Linux)
+    var startPath = widget.arg0; // take initial file from "args" list (Windows, Linux)
 
     if (Platform.isMacOS) {
       // in MacOS, we need to make a call to Swift native code to check if a file has been opened with our App
@@ -108,7 +108,12 @@ class _MyAppState extends State<MyApp> {
     }
 
     if (startPath == null) { // take initial file from Files dialog
-      FilePickerResult? result = await FilePicker.platform.pickFiles(dialogTitle: "Select a picture", type: FileType.custom, allowedExtensions: _allowedExtensions, lockParentWindow: true);
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        dialogTitle: "Select a picture",
+        type: .custom,
+        allowedExtensions: _allowedExtensions,
+        lockParentWindow: true,
+      );
       FLog.info(text: "Filename from FilePicker: ${result?.files.first.path}");
       startPath = result?.files.first.path;
     }
@@ -116,10 +121,10 @@ class _MyAppState extends State<MyApp> {
     // init code
     if (startPath != null) {
       files.addAll(Directory(path.dirname(startPath!))
-          .listSync()                                                                                        // get all folder children
-          .whereType<File>()                                                                                 // filter out directories
-          .where((f) => _allowedExtensions.map((s) => ".$s").contains(path.extension(f.path).toLowerCase())) // filter by extension
-          .toList()
+        .listSync()                                                                                        // get all folder children
+        .whereType<File>()                                                                                 // filter out directories
+        .where((f) => _allowedExtensions.map((s) => ".$s").contains(path.extension(f.path).toLowerCase())) // filter by extension
+        .toList()
         ..sort((a, b) => a.path.compareTo(b.path)));
       _currentFile = files.firstWhere((f) => f.path == startPath, orElse: () => files.first);
       _index = files.indexOf(_currentFile);
@@ -132,6 +137,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final isMacOS = Platform.isMacOS;
     if (!_initDone) return Center(child: CircularProgressIndicator());
     _changeWindowTitle();
     return PlatformMenuBar(
@@ -156,10 +162,11 @@ class _MyAppState extends State<MyApp> {
         ]),
         PlatformMenu(label: "Еdit", menus: [
           PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Turn ⟳        ↑",              onSelected: _rotateClockwise),
-            PlatformMenuItem(label: "Turn ⟲        ↓",              onSelected: _rotateCounterclockwise),
+            PlatformMenuItem(label: "Copy         ⌘E",               onSelected: _copyImage),
           ]),
           PlatformMenuItemGroup(members: [
+            PlatformMenuItem(label: "Turn ⟳        ↑",               onSelected: _rotateClockwise),
+            PlatformMenuItem(label: "Turn ⟲        ↓",               onSelected: _rotateCounterclockwise),
             PlatformMenuItem(label: "Bulk Turn ⟳   ⇧↑",              onSelected: _rotateClockwiseBulk),
             PlatformMenuItem(label: "Bulk Turn ⟲   ⇧↓",              onSelected: _rotateCounterclockwiseBulk),
           ]),
@@ -171,31 +178,32 @@ class _MyAppState extends State<MyApp> {
           PlatformMenuItem(label: "About        F1",                 onSelected: _showAboutDialog),
         ])
       ],
-      child: Shortcuts( // Use Flutter v3.3.0+ to have the bug with non-English layouts fixed. Otherwise hotkeys combination (⌘+S) will work only on English layouts.
+      child: Shortcuts(
         shortcuts: {
-          SingleActivator(LogicalKeyboardKey.arrowRight):                                               NextImageIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowLeft):                                                PreviousImageIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowUp):                                                  RotateClockwiseIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowDown):                                                RotateCounterclockwiseIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowUp, shift: true):                                     RotateClockwiseBulkIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowDown, shift: true):                                   RotateCounterclockwiseBulkIntent(),
-          SingleActivator(LogicalKeyboardKey.delete):                                                   DeleteFileIntent(),
-          SingleActivator(LogicalKeyboardKey.backspace):                                                DeleteFileIntent(),
-          SingleActivator(LogicalKeyboardKey.enter):                                                    SaveFileIntent(),
-          SingleActivator(LogicalKeyboardKey.escape):                                                   SetModeViewerIntent(),
-          SingleActivator(LogicalKeyboardKey.keyQ, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(), // since MacOS 11 "Cmd+Q" doesn't work automatically
-          SingleActivator(LogicalKeyboardKey.keyW, meta: Platform.isMacOS, control: !Platform.isMacOS): CloseWindowIntent(),
-          SingleActivator(LogicalKeyboardKey.keyR, meta: Platform.isMacOS, control: !Platform.isMacOS): RenameFileIntent(),
-          SingleActivator(LogicalKeyboardKey.keyE, meta: Platform.isMacOS, control: !Platform.isMacOS): SwitchModeIntent(),
-          SingleActivator(LogicalKeyboardKey.comma,meta: Platform.isMacOS, control: !Platform.isMacOS): SettingsIntent(),
-          SingleActivator(LogicalKeyboardKey.f1):                                                       AboutDialogIntent(),
-          SingleActivator(LogicalKeyboardKey.f2):                                                       RenameFileIntent(),
-          SingleActivator(LogicalKeyboardKey.f3):                                                       SwitchModeIntent(),
-          SingleActivator(LogicalKeyboardKey.f4):                                                       SettingsIntent(),
-          SingleActivator(LogicalKeyboardKey.f6):                                                       MoveToIntent(),
-          SingleActivator(LogicalKeyboardKey.f9, shift: true):                                          SaveLogsIntent(),
-          SingleActivator(LogicalKeyboardKey.f6, shift: true):                                          RenameFileIntent(),
-          SingleActivator(LogicalKeyboardKey.f12, shift: true):                                         DebugIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowRight):                             NextImageIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowLeft):                              PreviousImageIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowUp):                                RotateClockwiseIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowDown):                              RotateCounterclockwiseIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowUp, shift: true):                   RotateClockwiseBulkIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowDown, shift: true):                 RotateCounterclockwiseBulkIntent(),
+          SingleActivator(LogicalKeyboardKey.delete):                                 DeleteFileIntent(),
+          SingleActivator(LogicalKeyboardKey.backspace):                              DeleteFileIntent(),
+          SingleActivator(LogicalKeyboardKey.enter):                                  SaveFileIntent(),
+          SingleActivator(LogicalKeyboardKey.escape):                                 SetModeViewerIntent(),
+          SingleActivator(LogicalKeyboardKey.keyQ, meta: isMacOS, control: !isMacOS): CloseWindowIntent(),
+          SingleActivator(LogicalKeyboardKey.keyW, meta: isMacOS, control: !isMacOS): CloseWindowIntent(),
+          SingleActivator(LogicalKeyboardKey.keyR, meta: isMacOS, control: !isMacOS): RenameFileIntent(),
+          SingleActivator(LogicalKeyboardKey.keyE, meta: isMacOS, control: !isMacOS): SwitchModeIntent(),
+          SingleActivator(LogicalKeyboardKey.keyC, meta: isMacOS, control: !isMacOS): CopyIntent(),
+          SingleActivator(LogicalKeyboardKey.comma,meta: isMacOS, control: !isMacOS): SettingsIntent(),
+          SingleActivator(LogicalKeyboardKey.f1):                                     AboutDialogIntent(),
+          SingleActivator(LogicalKeyboardKey.f2):                                     RenameFileIntent(),
+          SingleActivator(LogicalKeyboardKey.f3):                                     SwitchModeIntent(),
+          SingleActivator(LogicalKeyboardKey.f4):                                     SettingsIntent(),
+          SingleActivator(LogicalKeyboardKey.f6):                                     MoveToIntent(),
+          SingleActivator(LogicalKeyboardKey.f9, shift: true):                        SaveLogsIntent(),
+          SingleActivator(LogicalKeyboardKey.f6, shift: true):                        RenameFileIntent(),
+          SingleActivator(LogicalKeyboardKey.f12, shift: true):                       DebugIntent(),
         },
         child: Actions(
           actions: {
@@ -214,6 +222,7 @@ class _MyAppState extends State<MyApp> {
             SettingsIntent:                   CallbackAction(onInvoke: (_) => _showSettingsDialog()),
             MoveToIntent:                     CallbackAction(onInvoke: (_) => _showMoveToDialog()),
             SaveLogsIntent:                   CallbackAction(onInvoke: (_) => _showSaveLogsDialog()),
+            CopyIntent:                       CallbackAction(onInvoke: (_) => _copyImage()),
             DebugIntent:                      CallbackAction(onInvoke: (_) => _debug()),
             CloseWindowIntent:                CallbackAction(onInvoke: (_) => exit(0)),
           },
@@ -221,13 +230,19 @@ class _MyAppState extends State<MyApp> {
             autofocus: true,         // focused by default
             child: RotatedBox(
               quarterTurns: _rotate,
-              child: Builder(builder: (c) {
+              child: Builder(builder: (context) {
                 // 1) for Editor mode BoxFit must be "contain"
                 // 2) to access "rawImageData" in _saveFile() method, cacheRawData must be "true"
-                if (_index < 0) return Center(child: Text("Welcome to TommyView!\nNo image files selected."));
+                if (_index < 0) return Center(child: Text("Welcome to TommyView!\nNo image files selected.", textAlign: .center));
                 final result = _forceLoad.isNotEmpty
-                  ? ExtendedImage.memory(key: extImgKey, _forceLoad,   mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true)
-                  : ExtendedImage.file  (key: extImgKey, _currentFile, mode: _mode, fit: _mode == ExtendedImageMode.editor ? BoxFit.contain : null, width: double.infinity, height: double.infinity, extendedImageEditorKey: editorKey, cacheRawData: true);
+                  ? ExtendedImage.memory(
+                      _forceLoad,   key: extImgKey, mode: _mode, fit: _mode == .editor ? .contain : null,
+                      width: .infinity, height: .infinity, extendedImageEditorKey: editorKey, cacheRawData: true
+                    )
+                  : ExtendedImage.file(
+                      _currentFile, key: extImgKey, mode: _mode, fit: _mode == .editor ? .contain : null,
+                      width: .infinity, height: .infinity, extendedImageEditorKey: editorKey, cacheRawData: true
+                    );
                 _forceLoad = Uint8List(0);
                 return result;
               })
@@ -240,7 +255,7 @@ class _MyAppState extends State<MyApp> {
 
   void _changeWindowTitle() {
     if (_index < 0) return;
-    final title = "${path.basename(_currentFile.path)}${isRotated ? "*" : ""} ${_mode == ExtendedImageMode.editor ? " [Crop Mode]" : ""}";
+    final title = "${path.basename(_currentFile.path)}${isRotated ? "*" : ""} ${_mode == .editor ? " [Crop Mode]" : ""}";
     windowManager.setTitle(title);
   }
 
@@ -248,20 +263,20 @@ class _MyAppState extends State<MyApp> {
     if (_index < 0) return;
     if (isWebp) _showWebpNotSupportedDialog();
     else setState(() {
-      _mode = _mode == ExtendedImageMode.editor ? ExtendedImageMode.gesture : ExtendedImageMode.editor;
+      _mode = _mode == .editor ? .gesture : .editor;
       _rotate = 0;
     });
   }
 
   void _setModeToViewer() {
     setState(() {
-      _mode = ExtendedImageMode.gesture;
+      _mode = .gesture;
       _rotate = 0;
     });
   }
 
   void _nextImage() {
-    if (_mode == ExtendedImageMode.gesture) {
+    if (_mode == .gesture) {
       if (_index < files.length - 1) {
         setState(() {
           _index++;
@@ -273,7 +288,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _previousImage() {
-    if (_mode == ExtendedImageMode.gesture) {
+    if (_mode == .gesture) {
       if (_index > 0) {
         setState(() {
           _index--;
@@ -286,7 +301,7 @@ class _MyAppState extends State<MyApp> {
 
   void _rotateClockwise() {
     if (_index < 0) return;
-    if (_mode == ExtendedImageMode.gesture) {
+    if (_mode == .gesture) {
       if (isWebp) _showWebpNotSupportedDialog();
       else setState(() {
         _rotate++;
@@ -296,7 +311,7 @@ class _MyAppState extends State<MyApp> {
 
   void _rotateCounterclockwise() {
     if (_index < 0) return;
-    if (_mode == ExtendedImageMode.gesture) {
+    if (_mode == .gesture) {
       if (isWebp) _showWebpNotSupportedDialog();
       else setState(() {
         _rotate--;
@@ -310,13 +325,14 @@ class _MyAppState extends State<MyApp> {
 
   void _rotateBulkInternal(bool clockwise) async {
     if (_index < 0) return;
-    if (_mode == ExtendedImageMode.gesture) {
+    if (_mode == .gesture) {
       if (!isRotated) {
         if (isWebp) _showWebpNotSupportedDialog();
         else {
-          const title = "Attention!";
-          final text = "Are you sure you want to rotate and save ALL ${files.length} file(s) at this folder ${clockwise ? "clockwise" : "counterclockwise"}?";
-          if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
+          const h = "Attention!";
+          final c = clockwise ? "clockwise" : "counterclockwise";
+          final t = "Are you sure you want to rotate and save ALL ${files.length} file(s) at this folder $c?";
+          if (await FlutterPlatformAlert.showAlert(windowTitle: h, text: t, alertStyle: .yesNo, iconStyle: .warning) == .yesButton) {
             final ImageConverter converter = Platform.isMacOS ? _converterMacOs : _converterWinLinux;
             final int rotate = clockwise ? 90 : -90;
             files.forEach((file) async {
@@ -337,10 +353,10 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _deleteFile() async {
-    if (_mode == ExtendedImageMode.gesture) {
-      const title = "Delete file?";
+    if (_mode == .gesture) {
+      const h = "Delete file?";
       final text = 'Remove file "${path.basename(_currentFile.path)}"?';
-      if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton) {
+      if (await FlutterPlatformAlert.showAlert(windowTitle: h, text: text, alertStyle: .yesNo, iconStyle: .warning) == .yesButton) {
         _currentFile.deleteSync();
         _updateCurrentFileAfterDelete();
       }
@@ -358,20 +374,21 @@ class _MyAppState extends State<MyApp> {
 
   void _renameFile(BuildContext context, {String? initialText}) async {
     if (_index < 0) return;
-    if (_mode == ExtendedImageMode.gesture) {
+    if (_mode == .gesture) {
       // for "prompt" function, make sure to pass a "context" that contains "MaterialApp" in its hierarchy;
       // also, set "barrierDismissible" to "true" to allow ESC button
       final currentName = path.basenameWithoutExtension(_currentFile.path);
       final extension = path.extension(_currentFile.path);
       final title = Text('Rename file "$currentName" ($extension)?');
       final initialValue = initialText ?? currentName;
-      final newName = await prompt(context, title: title, initialValue: initialValue, barrierDismissible: true, validator: _validateFilename );
+      final newName =
+        await prompt(context, title: title, initialValue: initialValue, barrierDismissible: true, validator: _validateFilename);
       if (newName != null && newName.isNotEmpty && newName != currentName) {
         final newPath = path.join(path.dirname(_currentFile.path), "$newName$extension");
         if (File(newPath).existsSync()) {
-          const title = "Overwrite file?";
+          const h = "Overwrite file?";
           final text = 'Filename "$newName" already exists. Overwrite?';
-          if (await FlutterPlatformAlert.showAlert(windowTitle: title, text: text, alertStyle: AlertButtonStyle.yesNo, iconStyle: IconStyle.warning) == AlertButton.yesButton)
+          if (await FlutterPlatformAlert.showAlert(windowTitle: h, text: text, alertStyle: .yesNo, iconStyle: .warning) == .yesButton)
             _renameFileImpl(newPath);
           else _renameFile(context, initialText: newName);
         } else _renameFileImpl(newPath);
@@ -396,12 +413,12 @@ class _MyAppState extends State<MyApp> {
     Rect? cropOption;
 
     switch (_mode) {
-      case ExtendedImageMode.gesture:
+      case .gesture:
         if (isRotated) {
           rotateOption = _rotate * 90;
         }
         break;
-      case ExtendedImageMode.editor:
+      case .editor:
         final state = editorKey.currentState!;
         final action = state.editAction!;
         final cropRect = state.getCropRect()!;
@@ -415,7 +432,7 @@ class _MyAppState extends State<MyApp> {
     if (rotateOption != null || cropOption != null) {
       final ImageConverter converter = Platform.isMacOS ? _converterMacOs : _converterWinLinux;
       final widget = extImgKey.currentWidget as ExtendedImage;         // editorKey cannot be used here!
-      final imageProvider = widget.image as ExtendedFileImageProvider; // now it's always ExtendedFileImageProvider, but theoretically might be ExtendedMemoryImageProvider
+      final imageProvider = widget.image as ExtendedFileImageProvider; // now it's always ExtendedFileImageProvider
       final Uint8List image = imageProvider.rawImageData;
       final Uint8List bytes = await converter.call(image, _currentFile.path, rotateOption, cropOption);
       _currentFile.writeAsBytesSync(bytes, flush: true);
@@ -427,15 +444,20 @@ class _MyAppState extends State<MyApp> {
     } // else user pressed Enter for no reason
   }
 
+  void _copyImage() {
+    if (_index < 0) return;
+    Pasteboard.writeImage(_forceLoad.isNotEmpty ? _forceLoad : _currentFile.readAsBytesSync());
+  }
+
   void _showWebpNotSupportedDialog() {
     const text = "Sorry, WebP format is not currently supported for editing";
-    FlutterPlatformAlert.showAlert(windowTitle: "Unsupported format", text: text, iconStyle: IconStyle.warning);
+    FlutterPlatformAlert.showAlert(windowTitle: "Unsupported format", text: text, iconStyle: .warning);
   }
 
   void _showAboutDialog() async {
     final info = await PackageInfo.fromPlatform();
     final text = "v${info.version} (build: ${info.buildNumber})\n\n© Artem Mitrakov. All rights reserved\nmitrakov-artem@yandex.ru";
-    FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: IconStyle.information);
+    FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: .information);
   }
 
   void _showSettingsDialog() async {
@@ -466,15 +488,23 @@ class _MyAppState extends State<MyApp> {
 
   /// converter that uses "image" library
   /// +: cross-platform: Windows, Linux, MacOS
-  /// -: sometimes cuts off EXIF data: "Corrupt data. The data provided does not follow the specification. ExifData: Tag data past end of buffer (1823 > 1915)" (v4.1.3)
+  /// -: sometimes cuts off EXIF data: "Corrupt data. The data provided does not follow the specification.
+  ///    ExifData: Tag data past end of buffer (1823 > 1915)" (v4.1.3)
   /// -: bug: https://github.com/brendan-duncan/image/issues/460
   /// -: bug: https://github.com/brendan-duncan/image/issues/462
   /// -: bug: https://github.com/brendan-duncan/image/issues/587
   /// -: no Webp support
   Future<Uint8List> _converterWinLinux(Uint8List image, String path, int? rotate, Rect? cropRect) {
-    final image0 = img.decodeImage(image)!;                                         // use v4.0.11+ (https://github.com/brendan-duncan/image/issues/460)
-    final image1 = rotate == null ? image0 : img.copyRotate(image0, angle: rotate); // use v4.0.12+ (https://github.com/brendan-duncan/image/issues/462)
-    final image2 = cropRect == null ? image1 : img.copyCrop(image1, x: cropRect.left.toInt(), y: cropRect.top.toInt(), width: cropRect.width.toInt(), height: cropRect.height.toInt());
+    // https://github.com/brendan-duncan/image/issues/460
+    // https://github.com/brendan-duncan/image/issues/462
+    final image0 = img.decodeImage(image)!;
+    final image1 = rotate == null ? image0 : img.copyRotate(image0, angle: rotate);
+    final image2 = cropRect == null ? image1 : img.copyCrop(image1,
+      x: cropRect.left.toInt(),
+      y: cropRect.top.toInt(),
+      width: cropRect.width.toInt(),
+      height: cropRect.height.toInt()
+    );
     return Future.value(img.encodeNamedImage(path, image2)!);
   }
 
@@ -487,10 +517,13 @@ class _MyAppState extends State<MyApp> {
     final quality = storage.getInt(qualitySettingKey) ?? defaultQuality;
     FLog.info(text: "Save file on quality = $quality");
 
-    final option = ImageEditorOption(); // AddTextOption, ClipOption, ColorOption, DrawOption, FlipOption, MaxImageOption, RotateOption, ScaleOption
-    if (rotate != null) option.addOption(RotateOption(rotate));
-    if (cropRect != null) option.addOption(ClipOption(x: cropRect.left, y: cropRect.top, width: cropRect.width, height: cropRect.height));
-    option.outputFormat = isPng ? OutputFormat.png(quality) : OutputFormat.jpeg(quality);
+    // AddTextOption, ClipOption, ColorOption, DrawOption, FlipOption, MaxImageOption, RotateOption, ScaleOption
+    final option = ImageEditorOption();
+    if (rotate != null)
+      option.addOption(RotateOption(rotate));
+    if (cropRect != null)
+      option.addOption(ClipOption(x: cropRect.left, y: cropRect.top, width: cropRect.width, height: cropRect.height));
+    option.outputFormat = isPng ? .png(quality) : .jpeg(quality);
     final result = await ImageEditor.editImage(image: image, imageEditorOption: option);
     return result!;
   }
@@ -506,7 +539,8 @@ class _MyAppState extends State<MyApp> {
       if (s.endsWith(".")) return 'Filename cannot end with dot (".")';
       if ({"CON", "PRN", "AUX", "NUL",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}.contains(s)) return "Filename cannot be a reserved Windows word";
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}.contains(s))
+        return "Filename cannot be a reserved Windows word";
     }
     return null;
   }
@@ -529,9 +563,10 @@ class _MyAppState extends State<MyApp> {
         NativeMenuItem(label: "Quit              Ctrl+W or Alt+F4",     onSelected: () => exit(0)),
       ]),
       NativeSubmenu(label: "Еdit", children: [
-        NativeMenuItem(label: "Turn ⟳        ↑",                       onSelected: _rotateClockwise),
-        NativeMenuItem(label: "Turn ⟲        ↓",                       onSelected: _rotateCounterclockwise),
+        NativeMenuItem(label: "Copy          Ctrl+C",                   onSelected: _copyImage),
         const NativeMenuDivider(),
+        NativeMenuItem(label: "Turn ⟳        ↑",                        onSelected: _rotateClockwise),
+        NativeMenuItem(label: "Turn ⟲        ↓",                        onSelected: _rotateCounterclockwise),
         NativeMenuItem(label: "Bulk Turn ⟳   Shift+↑",                  onSelected: _rotateClockwiseBulk),
         NativeMenuItem(label: "Bulk Turn ⟲   Shift+↓",                  onSelected: _rotateCounterclockwiseBulk),
         const NativeMenuDivider(),
@@ -583,5 +618,6 @@ class SetModeViewerIntent extends Intent {}
 class SettingsIntent extends Intent {}
 class MoveToIntent extends Intent {}
 class SaveLogsIntent extends Intent {}
+class CopyIntent extends Intent {}
 class AboutDialogIntent extends Intent {}
 class DebugIntent extends Intent {}
