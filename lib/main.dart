@@ -28,15 +28,15 @@ Build for MacOS:
   move *.dmg image to dist/
 
 Build for Windows:
-  bump version in _installer\windows\inno-setup.iss (align with pubspec.yaml)
+  bump version in "installer\windows\inno-setup.iss" (align with pubspec.yaml)
   flutter build windows
-  copy files from "build\windows\x64\runner\Release" to "_installer\windows\TommyView"
+  copy files from "build\windows\x64\runner\Release" to "installer\windows\TommyView"
   insert RuToken and run (PIN 12345678):
-  signtool sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /td SHA256 /fd SHA256 '.\TommyView.exe' '*.dll'
+  signtool sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /td SHA256 /fd SHA256 '.\*.exe' '*.dll'
   signtool verify /v '.\TommyView.exe'
   add there "vcruntime140_1.dll"
-  Compile "_installer\windows\inno-setup.iss" with InnoSetup Compiler (CTRL+F9)
-  signtool sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /td SHA256 /fd SHA256 '.\tommyview-win64.exe'
+  Compile "installer\windows\inno-setup.iss" with InnoSetup Compiler (CTRL+F9)
+  signtool sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /td SHA256 /fd SHA256 '.\*.exe'
   signtool verify /v '.\tommyview-win64.exe'
   move *.exe file to dist\
 
