@@ -457,7 +457,10 @@ class _MyAppState extends State<MyApp> {
   void _showAboutDialog() async {
     final info = await PackageInfo.fromPlatform();
     final text = "v${info.version} (build: ${info.buildNumber})\n\n© Artem Mitrakov. All rights reserved\nmitrakov-artem@yandex.ru";
-    FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: .information);
+    if (Platform.isWindows) // bug in Windows: F1.keyUp event is swallowed by ModalDialog event loop => let's wait for 300 msec.
+      Future.delayed(Duration(milliseconds: 300), () =>
+         FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: .information));
+    else FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: .information);
   }
 
   void _showSettingsDialog() async {
