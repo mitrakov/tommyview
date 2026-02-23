@@ -1,61 +1,25 @@
-import "package:flutter/material.dart";
+import 'package:shared_preferences/shared_preferences.dart';
 
-Future showSettings(BuildContext context, int currentQuality, ValueSetter<int> qualitySetter) {
-  return showDialog(
-    context: context,
-    barrierDismissible: true,
-    builder: (BuildContext context) => _SettingsDialog(currentQuality, qualitySetter),
-  );
-}
+class Settings {
+  Settings._();
+  static final Settings _instance = Settings._();
+  static SharedPreferences? _storage;
+  static Future<void> ensureInitialized() async => _storage = await SharedPreferences.getInstance();
+  static Settings get local {
+    if (_storage != null) return _instance;
+    throw Exception("Settings aren't initialized. Call Settings.ensureInitialized() first");
+  }
 
-class _SettingsDialog extends StatefulWidget {
-  const _SettingsDialog(this.currentQuality, this.qualitySetter);
+  int get quality       => _storage!.getInt("_QUALITY") ?? 99;
+  int get selectionFrom => _storage!.getInt("_SELECTION_FROM") ?? 0;
 
-  final int currentQuality;
-  final ValueSetter<int> qualitySetter;
+  Future<void> setQuality(int v) async {
+    if (v != quality)
+      await _storage!.setInt("_QUALITY", v);
+  }
 
-  @override
-  _SettingsDialogState createState() => _SettingsDialogState();
-}
-
-class _SettingsDialogState extends State<_SettingsDialog> {
-  late int quality = widget.currentQuality;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Row(mainAxisAlignment: .center, children: [Text("Settings", style: TextStyle(fontSize: 20, fontWeight: .bold))]),
-      content: Column(
-        mainAxisSize: .min,
-        children: [
-          Row(children: [
-            const Text("Save quality:"),
-            Slider(
-              value: quality.toDouble(),
-              min: 1,
-              max: 100,
-              divisions: 100,
-              autofocus: true,
-              label: "Save quality",
-              onChanged: (value) => setState(() => quality = value.toInt()),
-            ),
-            SizedBox(width: 40, child: Text(quality.toString())),
-          ])
-        ],
-      ),
-      actions: [
-        OutlinedButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
-        ),
-        OutlinedButton(
-          onPressed: () {
-            widget.qualitySetter(quality);
-            Navigator.pop(context);
-          },
-          child: const Text("OK"),
-        ),
-      ],
-    );
+  Future<void> setSelectionFrom(int v) async {
+    if (v != selectionFrom)
+      await _storage!.setInt("_SELECTION_FROM", v);
   }
 }

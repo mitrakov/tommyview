@@ -9,12 +9,12 @@ import "package:image/image.dart" as img;
 import "package:image_editor/image_editor.dart";
 import "package:file_picker/file_picker.dart";
 import "package:extended_image/extended_image.dart";
-import "package:shared_preferences/shared_preferences.dart";
 import "package:window_manager/window_manager.dart";
 import "package:flutter_platform_alert/flutter_platform_alert.dart";
 import "package:menubar/menubar.dart";
-import "package:tommyview/prompt.dart";
+import "package:tommyview/inputbox.dart";
 import "package:tommyview/settings.dart";
+import "package:tommyview/settingsview.dart";
 import "package:tommyview/moveto.dart";
 
 /*
@@ -49,8 +49,9 @@ Build for Linux:
   move *.zip file to dist/
  */
 void main(List<String> args) async {
-  WidgetsFlutterBinding.ensureInitialized();
+  await WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
+  await Settings.ensureInitialized();
   runApp(MaterialApp(home: Scaffold(body: MyApp(args.firstOrNull))));
 }
 
@@ -65,8 +66,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  static const qualitySettingKey = "quality";
-  static const defaultQuality = 99;
   final editorKey = GlobalKey<ExtendedImageEditorState>();
   final extImgKey = GlobalKey();         // key to access ExtendedImage widget
   final List<File> files = [];
@@ -144,7 +143,7 @@ class _MyAppState extends State<MyApp> {
       menus: [
         PlatformMenu(label: "Hey-Hey", menus: [
           PlatformMenuItemGroup(members: [
-            PlatformMenuItem(label: "Settings       ⌘, or F4",       onSelected: _showSettingsDialog),
+            PlatformMenuItem(label: "Settings       ⌘, or F4",       onSelected: () => showSettings(context)),
           ]),
           PlatformMenuItem(label: "Quit              ⌘W or ⌘Q",      onSelected: () => exit(0)),
         ]),
@@ -219,7 +218,7 @@ class _MyAppState extends State<MyApp> {
             SwitchModeIntent:                 CallbackAction(onInvoke: (_) => _switchMode()),
             SetModeViewerIntent:              CallbackAction(onInvoke: (_) => _setModeToViewer()),
             AboutDialogIntent:                CallbackAction(onInvoke: (_) => _showAboutDialog()),
-            SettingsIntent:                   CallbackAction(onInvoke: (_) => _showSettingsDialog()),
+            SettingsIntent:                   CallbackAction(onInvoke: (_) => showSettings(context)),
             MoveToIntent:                     CallbackAction(onInvoke: (_) => _showMoveToDialog()),
             SaveLogsIntent:                   CallbackAction(onInvoke: (_) => _showSaveLogsDialog()),
             CopyIntent:                       CallbackAction(onInvoke: (_) => _copyImage()),
@@ -379,10 +378,10 @@ class _MyAppState extends State<MyApp> {
       // also, set "barrierDismissible" to "true" to allow ESC button
       final currentName = path.basenameWithoutExtension(_currentFile.path);
       final extension = path.extension(_currentFile.path);
-      final title = Text('Rename file "$currentName" ($extension)?');
+      final title = 'Rename file "$currentName" ($extension)?';
       final initialValue = initialText ?? currentName;
-      final newName =
-        await prompt(context, title: title, initialValue: initialValue, barrierDismissible: true, validator: _validateFilename);
+      final from = Settings.local.selectionFrom;
+      final newName = await showInputBox(context, title, initialText: initialValue, validator: _validateFilename, selectedFrom: from);
       if (newName != null && newName.isNotEmpty && newName != currentName) {
         final newPath = path.join(path.dirname(_currentFile.path), "$newName$extension");
         if (File(newPath).existsSync()) {
@@ -463,15 +462,6 @@ class _MyAppState extends State<MyApp> {
     else FlutterPlatformAlert.showAlert(windowTitle: info.appName, text: text, iconStyle: .information);
   }
 
-  void _showSettingsDialog() async {
-    final storage = await SharedPreferences.getInstance();
-    final int currentQuality = storage.getInt(qualitySettingKey) ?? defaultQuality;
-    showSettings(context, currentQuality, (newQuality) async {
-      if (currentQuality != newQuality)
-        await storage.setInt(qualitySettingKey, newQuality);
-    });
-  }
-
   void _showMoveToDialog() {
     if (_index < 0) return;
     showMoveToDialog(context, _currentFile.path, _updateCurrentFileAfterDelete);
@@ -516,9 +506,8 @@ class _MyAppState extends State<MyApp> {
   /// -: only MacOS 10.15+
   /// -: no Webp support
   Future<Uint8List> _converterMacOs(Uint8List image, String path, int? rotate, Rect? cropRect) async {
-    final storage = await SharedPreferences.getInstance();
-    final quality = storage.getInt(qualitySettingKey) ?? defaultQuality;
-    FLog.info(text: "Save file on quality = $quality");
+    final quality = Settings.local.quality;
+    FLog.info(text: "Save file with quality = $quality");
 
     // AddTextOption, ClipOption, ColorOption, DrawOption, FlipOption, MaxImageOption, RotateOption, ScaleOption
     final option = ImageEditorOption();
@@ -561,7 +550,7 @@ class _MyAppState extends State<MyApp> {
         NativeMenuItem(label: "Delete           Del or Backspace",      onSelected: _deleteFile),
         NativeMenuItem(label: "Move To...     F6",                      onSelected: _showMoveToDialog),
         const NativeMenuDivider(),
-        NativeMenuItem(label: "Settings         Ctrl+, or F4",          onSelected: _showSettingsDialog),
+        NativeMenuItem(label: "Settings         Ctrl+, or F4",          onSelected: () => showSettings(context)),
         const NativeMenuDivider(),
         NativeMenuItem(label: "Quit              Ctrl+W or Alt+F4",     onSelected: () => exit(0)),
       ]),
