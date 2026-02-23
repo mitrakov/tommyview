@@ -23,30 +23,16 @@ Build for MacOS:
   flutter build macos
   xCode: Product -> Destination -> Any Mac (arm64, x86_64)
   xCode: Product -> Archive -> Distribute App -> Direct Distribution -> wait for 30-40 sec for notarization service to complete
-  copy "TommyView.app" to "_installer/macos/App"
-  run _installer/macos/build-dmg.sh
+  copy "TommyView.app" to "installer/macos/App"
+  run build-dmg.sh
   move *.dmg image to dist/
 
 Build for Windows:
-  bump version in "installer\windows\inno-setup.iss" (align with pubspec.yaml)
-  flutter build windows
-  copy files from "build\windows\x64\runner\Release" to "installer\windows\TommyView"
-  insert RuToken and run (PIN 12345678):
-  signtool sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /td SHA256 /fd SHA256 '.\*.exe' '*.dll'
-  signtool verify /v '.\TommyView.exe'
-  add there "vcruntime140_1.dll"
-  Compile "installer\windows\inno-setup.iss" with InnoSetup Compiler (CTRL+F9)
-  signtool sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /td SHA256 /fd SHA256 '.\*.exe'
-  signtool verify /v '.\tommyview-win64.exe'
-  move *.exe file to dist\
+  insert RuToken and use PIN 12345678
+  run installer\windows\build.bat
 
 Build for Linux:
-  bump version in pubspec.yaml
-  flutter build linux
-  go to: build/linux/x64/release/bundle and rename "bundle" to "tommyview"
-  run: zip -r9 tommyview-linux-x.y.z.zip tommyview/
-  TO-DO: package to .rpm or .deb images
-  move *.zip file to dist/
+  run installer/linux/build.sh
  */
 void main(List<String> args) async {
   await WidgetsFlutterBinding.ensureInitialized();
